@@ -55,7 +55,7 @@ class MusicBrainzClient:
             return data.get("artists", [])
         except httpx.HTTPError as e:
             from app.common.exceptions import ExternalAPIError
-            raise ExternalAPIError(f"MusicBrainz API error: {str(e)}") from e
+            raise ExternalAPIError(service="MusicBrainz", message=str(e)) from e
 
     async def get_artist(
         self,
@@ -80,7 +80,7 @@ class MusicBrainzClient:
             return response.json()
         except httpx.HTTPError as e:
             from app.common.exceptions import ExternalAPIError
-            raise ExternalAPIError(f"MusicBrainz API error: {str(e)}") from e
+            raise ExternalAPIError(service="MusicBrainz", message=str(e)) from e
 
     async def get_artist_releases(
         self, mbid: str, limit: int = 10
@@ -98,7 +98,7 @@ class MusicBrainzClient:
             return data.get("releases", [])
         except httpx.HTTPError as e:
             from app.common.exceptions import ExternalAPIError
-            raise ExternalAPIError(f"MusicBrainz API error: {str(e)}") from e
+            raise ExternalAPIError(service="MusicBrainz", message=str(e)) from e
 
     # ------------------------------------------------------------------
     # Lifecycle

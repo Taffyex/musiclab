@@ -28,8 +28,13 @@ COPY backend/ ./
 # Copy frontend build output into static directory
 COPY --from=frontend-builder /app/frontend/build ./static
 
-# Create data directory for SQLite
-RUN mkdir -p /app/data
+# Create non-root user
+RUN adduser --disabled-password --no-create-home appuser
+
+# Create data directory for SQLite and set permissions
+RUN mkdir -p /app/data && chown -R appuser:appuser /app
+
+USER appuser
 
 EXPOSE 8000
 

@@ -13,7 +13,7 @@ class CacheService:
 
     The cache table schema (created externally during DB init)::
 
-        CREATE TABLE IF NOT EXISTS cache (
+        CREATE TABLE IF NOT EXISTS cache_entries (
             key   TEXT PRIMARY KEY,
             value TEXT NOT NULL,
             expires_at REAL NOT NULL
@@ -32,14 +32,14 @@ class CacheService:
         Returns:
             The cached dict, or ``None``.
         """
-        async with self.db.execute("SELECT value, expires_at FROM cache WHERE key = ?", (key,)) as cursor:
+        async with self.db.execute("SELECT value, expires_at FROM cache_entries WHERE key = ?", (key,)) as cursor:
             row = await cursor.fetchone()
             
         if not row:
             return None
             
         if row["expires_at"] < time.time():
-            await self.db.execute("DELETE FROM cache WHERE key = ?", (key,))
+            await self.db.execute("DELETE FROM cache_entries WHERE key = ?", (key,))
             await self.db.commit()
             return None
             
@@ -58,7 +58,7 @@ class CacheService:
         expires_at = time.time() + ttl_seconds
         val_json = json.dumps(value)
         await self.db.execute(
-            "INSERT OR REPLACE INTO cache (key, value, expires_at) VALUES (?, ?, ?)",
+            "INSERT OR REPLACE INTO cache_entries (key, value, expires_at) VALUES (?, ?, ?)",
             (key, val_json, expires_at)
         )
         await self.db.commit()
@@ -69,10 +69,10 @@ class CacheService:
         Args:
             pattern: A SQL LIKE pattern (e.g. ``"lastfm:user123:%"``).
         """
-        await self.db.execute("DELETE FROM cache WHERE key LIKE ?", (pattern,))
+        await self.db.execute("DELETE FROM cache_entries WHERE key LIKE ?", (pattern,))
         await self.db.commit()
 
     async def cleanup(self) -> None:
         """Remove all expired entries from the cache table."""
-        await self.db.execute("DELETE FROM cache WHERE expires_at <= ?", (time.time(),))
+        await self.db.execute("DELETE FROM cache_entries WHERE expires_at <= ?", (time.time(),))
         await self.db.commit()

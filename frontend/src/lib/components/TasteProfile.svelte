@@ -1,8 +1,11 @@
-<script lang="ts">
-	import type { LastfmProfile } from '$lib/stores';
+	import type { LastfmProfile } from '$lib/types';
 	
-	let { profile = null, loading = false, error = null }: { profile?: LastfmProfile | null, loading?: boolean, error?: string | null } = $props();
-</script>
+	interface Props {
+		profile?: LastfmProfile | null;
+		loading?: boolean;
+		error?: string | null;
+	}
+	let { profile = null, loading = false, error = null }: Props = $props();
 
 <div class="card taste-profile">
 	<h2 class="text-2xl font-bold mb-md">Your Musical Taste</h2>
@@ -57,19 +60,10 @@
 	.taste-profile {
 		background: linear-gradient(135deg, var(--card-bg), var(--bg));
 	}
-	.mb-md { margin-bottom: var(--space-md); }
 	.mb-sm { margin-bottom: var(--space-sm); }
 	.mt-lg { margin-top: var(--space-lg); }
 	.py-xl { padding: var(--space-xl) 0; }
 	.py-md { padding: var(--space-md) 0; }
-	.wrap { flex-wrap: wrap; }
-	
-	.error-msg {
-		color: var(--error);
-		padding: var(--space-md);
-		background: rgba(225, 112, 85, 0.1);
-		border-radius: var(--radius-md);
-	}
 	
 	.track-item {
 		padding: var(--space-xs) 0;

@@ -4,6 +4,7 @@ MusicLab — Authentication router.
 Endpoints for login, logout, and retrieving the current user.
 """
 
+from __future__ import annotations
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import JSONResponse
 
@@ -28,6 +29,7 @@ async def login(
     """
     from fastapi import HTTPException, status
     from app.auth import service
+    from app.config import settings
 
     form = await request.form()
     username = form.get("username")
@@ -43,7 +45,7 @@ async def login(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
 
     token = await service.create_session(db, user["id"])
-    response.set_cookie(key="session", value=token, httponly=True, samesite="lax", max_age=7*24*60*60)
+    response.set_cookie(key="session", value=token, httponly=True, secure=settings.environment == 'production', samesite="lax", max_age=7*24*60*60)
     return {"message": "Logged in successfully"}
 
 

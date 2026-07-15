@@ -14,7 +14,7 @@ class LastfmClient:
             artists = await client.get_top_artists("username")
     """
 
-    BASE_URL: str = "http://ws.audioscrobbler.com/2.0/"
+    BASE_URL: str = "https://ws.audioscrobbler.com/2.0/"
 
     def __init__(self, api_key: str) -> None:
         self.api_key = api_key
@@ -48,10 +48,10 @@ class LastfmClient:
             return response.json()
         except httpx.HTTPStatusError as e:
             from app.common.exceptions import ExternalAPIError
-            raise ExternalAPIError(f"Last.fm API error: {e.response.status_code}") from e
+            raise ExternalAPIError(service="Last.fm", message=str(e.response.status_code)) from e
         except httpx.RequestError as e:
             from app.common.exceptions import ExternalAPIError
-            raise ExternalAPIError(f"Last.fm API request failed: {str(e)}") from e
+            raise ExternalAPIError(service="Last.fm", message=str(e)) from e
 
     # ------------------------------------------------------------------
     # User methods

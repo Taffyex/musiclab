@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 MusicLab — Application configuration via environment variables.
 
@@ -6,6 +8,7 @@ or environment variables at startup.
 """
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator
 
 
 class Settings(BaseSettings):
@@ -14,7 +17,15 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     # ─── Application ───
+    environment: str = "development"
     app_secret_key: str = "change-me-to-a-random-string"
+    
+    @field_validator("app_secret_key")
+    @classmethod
+    def validate_secret_key(cls, v: str) -> str:
+        if v == "change-me-to-a-random-string":
+            raise ValueError("Must change app_secret_key from default")
+        return v
 
     # ─── Last.fm ───
     lastfm_api_key: str = ""

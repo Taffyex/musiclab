@@ -5,6 +5,8 @@ Pure functions for password hashing, verification, and session
 token management. No FastAPI or HTTP concerns — just business logic.
 """
 
+from __future__ import annotations
+
 import secrets
 from datetime import datetime, timedelta, timezone
 

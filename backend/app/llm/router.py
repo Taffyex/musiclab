@@ -7,7 +7,7 @@ from fastapi.responses import StreamingResponse
 
 from app.llm.schemas import ChatMessage
 
-router = APIRouter(prefix="/llm", tags=["llm"])
+router = APIRouter()
 
 from app.config import settings
 from app.database import get_db

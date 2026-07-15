@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from pydantic import BaseModel, Field
 
@@ -28,11 +28,6 @@ class DiscoveryBatch(BaseModel):
 
     id: str
     cards: list[DiscoveryCard] = Field(default_factory=list)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
-class ExploreRequest(BaseModel):
-    """Request payload for the explore-similar endpoint."""
-
-    artist_name: str
-    depth: int = 5

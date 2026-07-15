@@ -3,16 +3,10 @@
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { apiClient } from '$lib/api';
+	import { requireAuth } from '$lib/utils/auth-guard';
 
 	onMount(async () => {
-		if (!$userStore) {
-			try {
-				const res = await apiClient.auth.me();
-				userStore.login(res.user);
-			} catch (e) {
-				goto('/login');
-			}
-		}
+		await requireAuth();
 	});
 </script>
 

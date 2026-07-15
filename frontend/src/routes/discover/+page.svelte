@@ -5,6 +5,7 @@
 	import { goto } from '$app/navigation';
 	import TasteProfile from '$lib/components/TasteProfile.svelte';
 	import DiscoveryCard from '$lib/components/DiscoveryCard.svelte';
+	import { requireAuth } from '$lib/utils/auth-guard';
 
 	let profileLoading = $state(false);
 	let profileError = $state('');
@@ -13,16 +14,8 @@
 	let discoveryError = $state('');
 
 	onMount(async () => {
-		if (!$userStore) {
-			// Try to restore session
-			try {
-				const res = await apiClient.auth.me();
-				userStore.login(res.user);
-			} catch (e) {
-				goto('/login');
-				return;
-			}
-		}
+		const isAuthed = await requireAuth();
+		if (!isAuthed) return;
 
 		loadProfile();
 		
@@ -104,7 +97,7 @@
 			</div>
 		{:else if $discoveryStore}
 			<div class="grid grid-cols-4 recommendations-grid">
-				{#each $discoveryStore.cards as item}
+				{#each $discoveryStore.cards as item (item.id)}
 					<DiscoveryCard {item} />
 				{/each}
 			</div>

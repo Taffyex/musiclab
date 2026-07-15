@@ -5,6 +5,8 @@ Provides ``get_current_user`` which extracts and validates the session
 token from an HTTP-only cookie, returning the authenticated user dict.
 """
 
+from __future__ import annotations
+
 from fastapi import Cookie, Depends, HTTPException, status
 
 import aiosqlite

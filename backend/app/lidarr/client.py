@@ -37,7 +37,7 @@ class LidarrClient:
             return response.json()
         except httpx.HTTPError as e:
             from app.common.exceptions import ExternalAPIError
-            raise ExternalAPIError(f"Lidarr API error: {str(e)}") from e
+            raise ExternalAPIError(service="Lidarr", message=str(e)) from e
 
     async def get_artist(self, artist_id: int) -> dict:
         """Get a single artist by Lidarr ID.
@@ -50,7 +50,7 @@ class LidarrClient:
             return response.json()
         except httpx.HTTPError as e:
             from app.common.exceptions import ExternalAPIError
-            raise ExternalAPIError(f"Lidarr API error: {str(e)}") from e
+            raise ExternalAPIError(service="Lidarr", message=str(e)) from e
 
     async def add_artist(self, data: dict) -> dict:
         """Add an artist to the Lidarr library.
@@ -63,7 +63,7 @@ class LidarrClient:
             return response.json()
         except httpx.HTTPError as e:
             from app.common.exceptions import ExternalAPIError
-            raise ExternalAPIError(f"Lidarr API error: {str(e)}") from e
+            raise ExternalAPIError(service="Lidarr", message=str(e)) from e
 
     async def search_artist(self, term: str) -> list[dict]:
         """Search for an artist in the Lidarr lookup.
@@ -76,7 +76,7 @@ class LidarrClient:
             return response.json()
         except httpx.HTTPError as e:
             from app.common.exceptions import ExternalAPIError
-            raise ExternalAPIError(f"Lidarr API error: {str(e)}") from e
+            raise ExternalAPIError(service="Lidarr", message=str(e)) from e
 
     async def get_quality_profiles(self) -> list[dict]:
         """List available quality profiles.
@@ -89,7 +89,7 @@ class LidarrClient:
             return response.json()
         except httpx.HTTPError as e:
             from app.common.exceptions import ExternalAPIError
-            raise ExternalAPIError(f"Lidarr API error: {str(e)}") from e
+            raise ExternalAPIError(service="Lidarr", message=str(e)) from e
 
     async def get_root_folders(self) -> list[dict]:
         """List configured root folders.
@@ -102,7 +102,7 @@ class LidarrClient:
             return response.json()
         except httpx.HTTPError as e:
             from app.common.exceptions import ExternalAPIError
-            raise ExternalAPIError(f"Lidarr API error: {str(e)}") from e
+            raise ExternalAPIError(service="Lidarr", message=str(e)) from e
 
     # ------------------------------------------------------------------
     # Lifecycle

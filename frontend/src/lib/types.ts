@@ -4,6 +4,7 @@
 export interface User {
 	id: number;
 	username: string;
+	lastfm_username: string | null;
 }
 
 export interface LoginRequest {
@@ -23,6 +24,7 @@ export interface LastfmProfile {
 	artist_count: number;
 	top_artists: TopArtist[];
 	top_tags: string[];
+	top_genres: Array<{ name: string; count: number }>;
 	recent_tracks: RecentTrack[];
 	updated_at: string;
 }

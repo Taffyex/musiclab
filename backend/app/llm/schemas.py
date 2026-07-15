@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pydantic import BaseModel, Field
+from typing import Literal
 
 
 class LLMResponse(BaseModel):
@@ -16,19 +17,10 @@ class LLMResponse(BaseModel):
 class ChatMessage(BaseModel):
     """A single message in a chat conversation."""
 
-    role: str  # "system", "user", or "assistant"
+    role: Literal["user", "assistant"]
     content: str
 
 
-class DiscoveryRecommendation(BaseModel):
-    """A single artist recommendation produced by the LLM."""
-
-    artist_name: str
-    genre: str = ""
-    era: str = ""
-    why_it_matches: str = ""
-    listener_count_hint: int | None = None
-    tags: list[str] = Field(default_factory=list)
 
 
 class MemoryUpdate(BaseModel):

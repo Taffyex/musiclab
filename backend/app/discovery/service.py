@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import aiosqlite
+import logging
+
+logger = logging.getLogger(__name__)
 
 from app.cache.service import CacheService
 from app.discogs.service import DiscogsService
@@ -59,7 +62,7 @@ class DiscoveryService:
         """
         from app.llm.prompts import build_system_prompt
         import json
-        import time
+        from datetime import datetime, timezone
         from uuid import uuid4
         
         # 1. Load user profile and memory
@@ -70,9 +73,9 @@ class DiscoveryService:
             if row and row["lastfm_username"]:
                 profile = await self.lastfm.get_full_profile(row["lastfm_username"])
                 
-        async with self.db.execute("SELECT data FROM memory_blocks WHERE user_id = ?", (user_id,)) as cursor:
+        async with self.db.execute("SELECT memory FROM memory_blocks WHERE user_id = ?", (user_id,)) as cursor:
             row = await cursor.fetchone()
-        memory = json.loads(row["data"]) if row else {}
+        memory = json.loads(row["memory"]) if row else {}
         
         # 2. Get library artist names
         library_names = await self.lidarr.get_library_artist_names()
@@ -89,6 +92,7 @@ class DiscoveryService:
             if not isinstance(raw_recs, list):
                 raw_recs = []
         except Exception:
+            logger.exception("Failed to parse LLM response")
             raw_recs = []
             
         # 4. Enrich each artist
@@ -117,11 +121,11 @@ class DiscoveryService:
         # 5. Persist batch
         batch = DiscoveryBatch(
             id=str(uuid4()),
-            created_at=int(time.time()),
+            created_at=datetime.now(timezone.utc),
             cards=cards
         )
         await self.db.execute(
-            "INSERT INTO discovery_history (id, user_id, batch_data, created_at) VALUES (?, ?, ?, ?)",
+            "INSERT INTO discovery_batches (id, user_id, cards, created_at) VALUES (?, ?, ?, ?)",
             (batch.id, user_id, json.dumps(batch.model_dump()), batch.created_at)
         )
         await self.db.commit()
@@ -142,6 +146,7 @@ class DiscoveryService:
         """
         from app.llm.prompts import build_system_prompt
         import json
+        from uuid import uuid4
         
         system_prompt = build_system_prompt(mode="explore")
         user_prompt = f"Please explore {count} artists similar to {artist_name}."
@@ -153,6 +158,7 @@ class DiscoveryService:
             if not isinstance(raw_recs, list):
                 raw_recs = []
         except Exception:
+            logger.exception("Failed to parse LLM response")
             raw_recs = []
             
         cards = []
@@ -164,7 +170,7 @@ class DiscoveryService:
             lastfm_data = enriched.get("lastfm") or {}
             
             card = DiscoveryCard(
-                id=str(import_uuid.uuid4()) if 'import_uuid' in locals() else __import__("uuid").uuid4().hex,
+                id=str(uuid4()),
                 artist_name=name,
                 genre_tags=raw_rec.get("genre_tags", []),
                 era=raw_rec.get("era", ""),
@@ -216,13 +222,13 @@ class DiscoveryService:
         """
         import json
         async with self.db.execute(
-            "SELECT batch_data FROM discovery_history WHERE user_id = ? ORDER BY created_at DESC", 
+            "SELECT cards FROM discovery_batches WHERE user_id = ? ORDER BY created_at DESC", 
             (user_id,)
         ) as cursor:
             rows = await cursor.fetchall()
             
         batches = []
         for row in rows:
-            batches.append(DiscoveryBatch.model_validate(json.loads(row["batch_data"])))
+            batches.append(DiscoveryBatch.model_validate(json.loads(row["cards"])))
             
         return batches

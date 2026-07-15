@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends
 
 from app.lastfm.schemas import LastfmProfile
 
-router = APIRouter(prefix="/lastfm", tags=["lastfm"])
+router = APIRouter()
 
 from app.auth.dependencies import get_current_user
 from app.database import get_db

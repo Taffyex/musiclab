@@ -4,7 +4,10 @@
 	import DiscoveryCardComp from './DiscoveryCard.svelte';
 	import LidarrConfirm from './LidarrConfirm.svelte';
 
-	let { artist } = $props<{ artist: DiscoveryCard }>();
+	interface Props {
+		artist: DiscoveryCard;
+	}
+	let { artist }: Props = $props();
 
 	let similarArtists = $state<DiscoveryCard[] | null>(null);
 	let loadingSimilar = $state(false);
@@ -122,7 +125,7 @@
 
 		{#if similarArtists}
 			<div class="grid grid-cols-4 recommendations-grid">
-				{#each similarArtists as sim}
+				{#each similarArtists as sim (sim.id)}
 					<DiscoveryCardComp item={sim} />
 				{/each}
 			</div>
@@ -132,11 +135,8 @@
 
 <style>
 	.gap-xl { gap: var(--space-xl); }
-	.gap-xs { gap: var(--space-xs); }
-	.mt-sm { margin-top: var(--space-sm); }
 	.mb-xs { margin-bottom: var(--space-xs); }
 	.mb-lg { margin-bottom: var(--space-lg); }
-	.wrap { flex-wrap: wrap; }
 	.items-center { align-items: center; }
 	.border-b { border-bottom: 1px solid var(--border); }
 	.pb-sm { padding-bottom: var(--space-sm); }
@@ -155,13 +155,6 @@
 		padding: 8px 16px;
 		border-radius: var(--radius-md);
 		font-weight: bold;
-	}
-
-	.error-msg {
-		color: var(--error);
-		background: rgba(225, 112, 85, 0.1);
-		padding: var(--space-md);
-		border-radius: var(--radius-md);
 	}
 
 	@media (max-width: 768px) {

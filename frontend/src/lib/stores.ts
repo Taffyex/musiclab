@@ -1,22 +1,5 @@
 import { writable, derived } from 'svelte/store';
-import type { DiscoveryBatch } from '$lib/types';
-
-// Types (simplified for stores)
-export interface User {
-	id: number;
-	username: string;
-	lastfm_username: string | null;
-}
-
-export interface LastfmProfile {
-	username: string;
-	playcount: number;
-	top_artists: Array<{ name: string; playcount: number; url: string }>;
-	top_genres: Array<{ name: string; count: number }>;
-	recent_tracks: Array<{ name: string; artist: string; date: string }>;
-}
-
-
+import type { DiscoveryBatch, User, LastfmProfile } from '$lib/types';
 // User Store
 function createUserStore() {
 	const { subscribe, set, update } = writable<User | null>(null);

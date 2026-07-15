@@ -17,6 +17,7 @@ async function fetchBase(endpoint: string, options: RequestInit = {}) {
 	const url = `${API_BASE}${endpoint}`;
 	const config: RequestInit = {
 		...options,
+		credentials: 'include',
 		headers: {
 			'Content-Type': 'application/json',
 			...options.headers
@@ -47,6 +48,7 @@ export const apiClient = {
 
 			const res = await fetch(`${API_BASE}/auth/login`, {
 				method: 'POST',
+				credentials: 'include',
 				headers: {
 					'Content-Type': 'application/x-www-form-urlencoded'
 				},
@@ -125,6 +127,7 @@ export const apiClient = {
 		chatMessage: async function* (content: string) {
 			const res = await fetch(`${API_BASE}/llm/chat/message`, {
 				method: 'POST',
+				credentials: 'include',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ content })
 			});

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 MusicLab — Shared pytest fixtures.
 

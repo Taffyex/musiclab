@@ -5,6 +5,8 @@ Provides an async context manager for database connections and
 an init function that runs the DDL schema on first startup.
 """
 
+from __future__ import annotations
+
 import os
 from pathlib import Path
 from typing import AsyncGenerator

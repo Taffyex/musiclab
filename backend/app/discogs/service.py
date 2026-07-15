@@ -32,10 +32,8 @@ class DiscogsService:
         details = await self.client.get_artist(best_match["id"])
         
         return DiscogsArtist(
-            id=details.get("id", 0),
             name=details.get("name", ""),
-            profile=details.get("profile", ""),
-            url=details.get("uri", "")
+            profile=details.get("profile", "")
         )
 
     async def get_key_releases(
@@ -60,9 +58,8 @@ class DiscogsService:
         releases = []
         for r in releases_data:
             releases.append(DiscogsRelease(
-                id=r.get("id", 0),
                 title=r.get("title", ""),
                 year=r.get("year", 0),
-                type=r.get("type", "")
+                format=r.get("type", "")
             ))
         return releases

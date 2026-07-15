@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from app.discovery.schemas import DiscoveryBatch, DiscoveryCard, ExploreRequest
 
-router = APIRouter(prefix="/discovery", tags=["discovery"])
+router = APIRouter()
 
 from app.auth.dependencies import get_current_user
 from app.database import get_db
@@ -54,7 +54,7 @@ def get_discovery_service(
 
 @router.post("/generate", response_model=DiscoveryBatch)
 async def generate_discovery(
-    count: int = 8,
+    count: int = Query(default=8, ge=1, le=50),
     current_user: dict = Depends(get_current_user),
     service: DiscoveryService = Depends(get_discovery_service)
 ) -> DiscoveryBatch:
@@ -64,7 +64,7 @@ async def generate_discovery(
 
 @router.get("/explore/{artist_name}", response_model=list[DiscoveryCard])
 async def explore_artist(
-    artist_name: str, count: int = 5,
+    artist_name: str, count: int = Query(default=5, ge=1, le=50),
     current_user: dict = Depends(get_current_user),
     service: DiscoveryService = Depends(get_discovery_service)
 ) -> list[DiscoveryCard]:

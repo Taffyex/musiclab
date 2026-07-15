@@ -5,13 +5,21 @@ Sets up the FastAPI app with lifespan management, router registration,
 health check endpoint, and static file serving for the SvelteKit frontend.
 """
 
+from __future__ import annotations
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import init_db
+from app.auth.router import router as auth_router
+from app.lastfm.router import router as lastfm_router
+from app.lidarr.router import router as lidarr_router
+from app.discovery.router import router as discovery_router
+from app.llm.router import router as llm_router
+from app.common.middleware import register_error_handlers
 
 
 # ──────────────────────────────────────────────
@@ -36,27 +44,25 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+register_error_handlers(app)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # ──────────────────────────────────────────────
 # Router registration
 # ──────────────────────────────────────────────
 
-try:
-    from app.auth.router import router as auth_router
-    app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
-except ImportError:
-    pass
-
-from app.lastfm.router import router as lastfm_router
+app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
 app.include_router(lastfm_router, prefix="/api/lastfm", tags=["lastfm"])
-
-from app.lidarr.router import router as lidarr_router
 app.include_router(lidarr_router, prefix="/api/lidarr", tags=["lidarr"])
-
-from app.discovery.router import router as discovery_router
 app.include_router(discovery_router, prefix="/api/discovery", tags=["discovery"])
-
-from app.llm.router import router as llm_router
 app.include_router(llm_router, prefix="/api/llm", tags=["llm"])
 
 

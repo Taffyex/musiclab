@@ -6,8 +6,9 @@ from fastapi import APIRouter, Depends
 
 from app.lidarr.schemas import AddArtistRequest, LidarrArtist
 
-router = APIRouter(prefix="/lidarr", tags=["lidarr"])
+router = APIRouter()
 
+from app.auth.dependencies import get_current_user
 from app.config import settings
 from app.lidarr.client import LidarrClient
 from app.lidarr.service import LidarrService
@@ -17,7 +18,10 @@ def get_lidarr_service() -> LidarrService:
     return LidarrService(client=client)
 
 @router.get("/library", response_model=list[LidarrArtist])
-async def list_library(service: LidarrService = Depends(get_lidarr_service)) -> list[LidarrArtist]:
+async def list_library(
+    current_user: dict = Depends(get_current_user),
+    service: LidarrService = Depends(get_lidarr_service)
+) -> list[LidarrArtist]:
     """List all artists in the Lidarr library."""
     return await service.get_library()
 
@@ -25,6 +29,7 @@ async def list_library(service: LidarrService = Depends(get_lidarr_service)) -> 
 @router.post("/add", response_model=LidarrArtist)
 async def add_artist(
     request: AddArtistRequest,
+    current_user: dict = Depends(get_current_user),
     service: LidarrService = Depends(get_lidarr_service)
 ) -> LidarrArtist:
     """Add an artist to the Lidarr library."""
@@ -32,12 +37,18 @@ async def add_artist(
 
 
 @router.get("/profiles")
-async def list_quality_profiles(service: LidarrService = Depends(get_lidarr_service)) -> list[dict]:
+async def list_quality_profiles(
+    current_user: dict = Depends(get_current_user),
+    service: LidarrService = Depends(get_lidarr_service)
+) -> list[dict]:
     """List available Lidarr quality profiles."""
     return await service.client.get_quality_profiles()
 
 
 @router.get("/root-folders")
-async def list_root_folders(service: LidarrService = Depends(get_lidarr_service)) -> list[dict]:
+async def list_root_folders(
+    current_user: dict = Depends(get_current_user),
+    service: LidarrService = Depends(get_lidarr_service)
+) -> list[dict]:
     """List configured Lidarr root folders."""
     return await service.client.get_root_folders()

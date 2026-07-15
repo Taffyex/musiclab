@@ -1,8 +1,10 @@
 <script lang="ts">
 	import type { DiscoveryCard } from '$lib/types';
 	import LidarrConfirm from './LidarrConfirm.svelte';
-	
-	let { item } = $props<{ item: DiscoveryCard }>();
+	interface Props {
+		item: DiscoveryCard;
+	}
+	let { item }: Props = $props();
 	
 	let showLidarrConfirm = $state(false);
 
@@ -83,11 +85,7 @@
 	.reason {
 		flex-grow: 1;
 	}
-	
-	.gap-xs { gap: var(--space-xs); }
-	.mt-sm { margin-top: var(--space-sm); }
 	.mt-md { margin-top: var(--space-md); }
-	.wrap { flex-wrap: wrap; }
 	
 	.platform-btn {
 		flex: 1;

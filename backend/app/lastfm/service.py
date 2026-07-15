@@ -95,17 +95,3 @@ class LastfmService:
         await self.cache.set(cache_key, profile.model_dump(), ttl_seconds=3600)
         return profile
 
-    async def save_profile(self, user_id: int, profile: LastfmProfile) -> None:
-        """Persist the Last.fm profile to the ``lastfm_profiles`` table.
-
-        Args:
-            user_id: Internal user ID.
-            profile: The profile data to persist.
-        """
-        import json
-        profile_json = json.dumps(profile.model_dump())
-        await self.db.execute(
-            "INSERT OR REPLACE INTO lastfm_profiles (user_id, profile_data) VALUES (?, ?)",
-            (user_id, profile_json)
-        )
-        await self.db.commit()

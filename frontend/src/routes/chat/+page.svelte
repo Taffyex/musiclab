@@ -4,21 +4,15 @@
 	import { apiClient } from '$lib/api';
 	import { goto } from '$app/navigation';
 	import ChatPanel from '$lib/components/ChatPanel.svelte';
+	import { requireAuth } from '$lib/utils/auth-guard';
 
 	let loading = $state(true);
 	let error = $state('');
 	let initialMessages: any[] = $state([]);
 
 	onMount(async () => {
-		if (!$userStore) {
-			try {
-				const res = await apiClient.auth.me();
-				userStore.login(res.user);
-			} catch (e) {
-				goto('/login');
-				return;
-			}
-		}
+		const isAuthed = await requireAuth();
+		if (!isAuthed) return;
 
 		try {
 			const memory = await apiClient.llm.getMemory();

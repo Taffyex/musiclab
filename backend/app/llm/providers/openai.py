@@ -31,8 +31,7 @@ class OpenAIProvider(LLMProvider):
         user_message: str,
         tools: list[dict[str, Any]] | None = None,
     ) -> LLMResponse:
-        """Generate a non-streaming response via the OpenAI API.
-
+        """Generate a non-streaming response via the OpenAI API."""
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message},
@@ -52,8 +51,7 @@ class OpenAIProvider(LLMProvider):
         system_prompt: str,
         user_message: str,
     ) -> AsyncIterator[str]:
-        """Stream response tokens from the OpenAI API.
-
+        """Stream response tokens from the OpenAI API."""
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message},
@@ -73,8 +71,7 @@ class OpenAIProvider(LLMProvider):
         user_message: str,
         tools: list[dict[str, Any]],
     ) -> LLMResponse:
-        """Generate a response with function-calling via the OpenAI API.
-
+        """Generate a response with function-calling via the OpenAI API."""
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message},

@@ -39,7 +39,7 @@ class DiscogsClient:
             return response.json()
         except httpx.HTTPError as e:
             from app.common.exceptions import ExternalAPIError
-            raise ExternalAPIError(f"Discogs API error: {str(e)}") from e
+            raise ExternalAPIError(service="Discogs", message=str(e)) from e
 
     async def get_artist(self, artist_id: int) -> dict:
         """Get full artist details by Discogs ID.
@@ -52,7 +52,7 @@ class DiscogsClient:
             return response.json()
         except httpx.HTTPError as e:
             from app.common.exceptions import ExternalAPIError
-            raise ExternalAPIError(f"Discogs API error: {str(e)}") from e
+            raise ExternalAPIError(service="Discogs", message=str(e)) from e
 
     async def get_artist_releases(
         self, artist_id: int, limit: int = 10
@@ -68,7 +68,7 @@ class DiscogsClient:
             return data.get("releases", [])
         except httpx.HTTPError as e:
             from app.common.exceptions import ExternalAPIError
-            raise ExternalAPIError(f"Discogs API error: {str(e)}") from e
+            raise ExternalAPIError(service="Discogs", message=str(e)) from e
 
     # ------------------------------------------------------------------
     # Lifecycle

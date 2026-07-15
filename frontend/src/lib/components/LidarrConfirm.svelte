@@ -2,13 +2,13 @@
 	import { onMount } from 'svelte';
 	import { apiClient } from '$lib/api';
 	import type { QualityProfile, RootFolder } from '$lib/types';
-
-	let { artistName, foreignArtistId, onCancel, onSuccess } = $props<{
+	interface Props {
 		artistName: string;
 		foreignArtistId: string;
 		onCancel: () => void;
 		onSuccess: () => void;
-	}>();
+	}
+	let { artistName, foreignArtistId, onCancel, onSuccess }: Props = $props();
 
 	let profiles = $state<QualityProfile[]>([]);
 	let rootFolders = $state<RootFolder[]>([]);
@@ -108,23 +108,15 @@
 
 <style>
 	.lidarr-confirm {
-		background: var(--bg-card-elevated);
+		background: var(--card-bg);
 		border: 1px solid var(--border);
 	}
 	
 	.input-field {
-		background: var(--bg-main);
+		background: var(--bg);
 		border: 1px solid var(--border);
-		color: var(--text-main);
+		color: var(--text);
 		border-radius: var(--radius-sm);
-	}
-
-	.error-msg {
-		color: var(--error);
-		background: rgba(225, 112, 85, 0.1);
-		padding: var(--space-sm);
-		border-radius: var(--radius-sm);
-		font-size: 0.875rem;
 	}
 
 	.checkbox {

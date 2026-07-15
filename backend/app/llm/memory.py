@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import aiosqlite
+import logging
+
+logger = logging.getLogger(__name__)
 
 from app.llm.base import LLMProvider
 from app.llm.schemas import ChatMessage, MemoryUpdate
@@ -34,13 +37,13 @@ class MemoryService:
             if no memory exists yet.
         """
         import json
-        async with self.db.execute("SELECT data FROM memory_blocks WHERE user_id = ?", (user_id,)) as cursor:
+        async with self.db.execute("SELECT memory FROM memory_blocks WHERE user_id = ?", (user_id,)) as cursor:
             row = await cursor.fetchone()
         
         if not row:
             return {}
             
-        return json.loads(row["data"])
+        return json.loads(row["memory"])
 
     async def extract_and_update(
         self,
@@ -67,6 +70,7 @@ class MemoryService:
             update_data = json.loads(response.content)
             update = MemoryUpdate(**update_data)
         except Exception:
+            logger.exception("Failed to parse LLM response")
             return
             
         existing = await self.get_memory(user_id)
@@ -74,7 +78,7 @@ class MemoryService:
         
         merged_json = json.dumps(merged)
         await self.db.execute(
-            "INSERT OR REPLACE INTO memory_blocks (user_id, data) VALUES (?, ?)",
+            "INSERT OR REPLACE INTO memory_blocks (user_id, memory) VALUES (?, ?)",
             (user_id, merged_json)
         )
         await self.db.commit()

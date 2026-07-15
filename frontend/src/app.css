@@ -156,6 +156,10 @@ ol {
 	justify-content: space-between;
 }
 
+.gap-xs {
+	gap: var(--space-xs);
+}
+
 .gap-sm {
 	gap: var(--space-sm);
 }
@@ -167,6 +171,18 @@ ol {
 .gap-lg {
 	gap: var(--space-lg);
 }
+
+.mb-md { margin-bottom: var(--space-md); }
+.mt-sm { margin-top: var(--space-sm); }
+.wrap { flex-wrap: wrap; }
+
+.error-msg {
+	color: var(--error);
+	background: rgba(225, 112, 85, 0.1);
+	padding: var(--space-md);
+	border-radius: var(--radius-md);
+}
+
 
 /* Grid */
 .grid {

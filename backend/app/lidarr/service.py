@@ -73,34 +73,3 @@ class LidarrService:
             path=res.get("path", "")
         )
 
-    async def search_and_add(
-        self,
-        artist_name: str,
-        quality_profile_id: int,
-        root_folder: str,
-    ) -> LidarrArtist:
-        """Search for an artist in Lidarr's lookup and add the best match.
-
-        Args:
-            artist_name: Name to search for.
-            quality_profile_id: The quality profile to apply.
-            root_folder: Root folder path for the artist's files.
-
-        Returns:
-            The newly added :class:`LidarrArtist`.
-        """
-        results = await self.client.search_artist(artist_name)
-        if not results:
-            from fastapi import HTTPException
-            raise HTTPException(status_code=404, detail="Artist not found in Lidarr lookup")
-            
-        best_match = next((r for r in results if r.get("artistName", "").lower() == artist_name.lower()), results[0])
-        
-        request = AddArtistRequest(
-            name=best_match.get("artistName", ""),
-            foreign_artist_id=best_match.get("foreignArtistId", ""),
-            quality_profile_id=quality_profile_id,
-            root_folder_path=root_folder,
-            monitored=True
-        )
-        return await self.add_artist_to_library(request)

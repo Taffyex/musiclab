@@ -1,12 +1,16 @@
 <script lang="ts">
 	import { apiClient } from '$lib/api';
-	
 	interface Message {
 		role: 'user' | 'assistant';
 		content: string;
+		timestamp?: string;
 	}
 
-	let { initialMessages = [] }: { initialMessages?: Message[] } = $props();
+	interface Props {
+		initialMessages?: Message[];
+	}
+
+	let { initialMessages = [] }: Props = $props();
 	
 	let messages: Message[] = $state([...initialMessages]);
 	let inputMessage = $state('');
@@ -27,14 +31,13 @@
 
 	async function sendMessage() {
 		if (!inputMessage.trim() || isStreaming) return;
-
 		const userContent = inputMessage.trim();
-		messages = [...messages, { role: 'user', content: userContent }];
+		messages = [...messages, { role: 'user', content: userContent, timestamp: Date.now().toString() }];
 		inputMessage = '';
 		isStreaming = true;
 
 		// Add an empty assistant message that will be populated via SSE
-		messages = [...messages, { role: 'assistant', content: '' }];
+		messages = [...messages, { role: 'assistant', content: '', timestamp: (Date.now() + 1).toString() }];
 
 		try {
 			const stream = apiClient.llm.chatMessage(userContent);
@@ -66,7 +69,7 @@
 				Start a conversation about your music taste!
 			</div>
 		{:else}
-			{#each messages as msg}
+			{#each messages as msg (msg.timestamp || msg.content)}
 				<div class="message {msg.role}">
 					<div class="message-bubble">
 						{msg.content}
@@ -117,7 +120,6 @@
 	}
 
 	.h-full { height: 100%; }
-	.mt-sm { margin-top: var(--space-sm); }
 	.mt-md { margin-top: var(--space-md); }
 
 	.message {
