@@ -48,10 +48,14 @@ class MusicBrainzClient:
 
         Rate limit: 1 req/sec — caller must throttle.
         """
-        # TODO: Build query string
-        # TODO: GET /artist with query param
-        # TODO: Parse response["artists"] list
-        raise NotImplementedError
+        try:
+            response = await self._http.get("/artist", params={"query": name, "fmt": "json"})
+            response.raise_for_status()
+            data = response.json()
+            return data.get("artists", [])
+        except httpx.HTTPError as e:
+            from app.common.exceptions import ExternalAPIError
+            raise ExternalAPIError(f"MusicBrainz API error: {str(e)}") from e
 
     async def get_artist(
         self,
@@ -69,10 +73,14 @@ class MusicBrainzClient:
         """
         if includes is None:
             includes = ["tags", "artist-rels"]
-        # TODO: Build inc param from includes list ("+"-joined)
-        # TODO: GET /artist/{mbid} with inc and fmt=json
-        # TODO: Return parsed JSON
-        raise NotImplementedError
+        inc_param = "+".join(includes)
+        try:
+            response = await self._http.get(f"/artist/{mbid}", params={"inc": inc_param, "fmt": "json"})
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            from app.common.exceptions import ExternalAPIError
+            raise ExternalAPIError(f"MusicBrainz API error: {str(e)}") from e
 
     async def get_artist_releases(
         self, mbid: str, limit: int = 10
@@ -83,9 +91,14 @@ class MusicBrainzClient:
 
         Rate limit: 1 req/sec — caller must throttle.
         """
-        # TODO: GET /release with artist, limit, fmt params
-        # TODO: Parse response["releases"] list
-        raise NotImplementedError
+        try:
+            response = await self._http.get("/release", params={"artist": mbid, "limit": limit, "fmt": "json"})
+            response.raise_for_status()
+            data = response.json()
+            return data.get("releases", [])
+        except httpx.HTTPError as e:
+            from app.common.exceptions import ExternalAPIError
+            raise ExternalAPIError(f"MusicBrainz API error: {str(e)}") from e
 
     # ------------------------------------------------------------------
     # Lifecycle

@@ -21,11 +21,25 @@ class MusicBrainzService:
         Returns:
             A :class:`MBArtist` if found, else ``None``.
         """
-        # TODO: Search for artist via client.search_artist
-        # TODO: Pick best match (highest score)
-        # TODO: Fetch full artist details with includes
-        # TODO: Map to MBArtist schema
-        raise NotImplementedError
+        artists = await self.client.search_artist(artist_name)
+        if not artists:
+            return None
+        
+        # Pick the best match (artists from search have a 'score' attribute, sort descending)
+        best_match = max(artists, key=lambda a: int(a.get("score", 0)))
+        
+        details = await self.client.get_artist(best_match["id"], includes=["tags", "artist-rels"])
+        
+        aliases = [alias.get("name", "") for alias in details.get("aliases", [])]
+        tags = [tag.get("name", "") for tag in details.get("tags", [])]
+        
+        return MBArtist(
+            mbid=details.get("id", ""),
+            name=details.get("name", ""),
+            country=details.get("country", ""),
+            aliases=aliases,
+            tags=tags
+        )
 
     async def get_related_artists(
         self, artist_name: str
@@ -38,8 +52,33 @@ class MusicBrainzService:
         Returns:
             A list of related :class:`MBArtist` objects.
         """
-        # TODO: Resolve artist MBID via search
-        # TODO: Fetch artist with artist-rels include
-        # TODO: Extract related artist MBIDs from relations
-        # TODO: Fetch each related artist and map to MBArtist
-        raise NotImplementedError
+        artists = await self.client.search_artist(artist_name)
+        if not artists:
+            return []
+            
+        best_match = max(artists, key=lambda a: int(a.get("score", 0)))
+        details = await self.client.get_artist(best_match["id"], includes=["artist-rels"])
+        
+        relations = details.get("relations", [])
+        related_mbids = [rel.get("artist", {}).get("id") for rel in relations if rel.get("target-type") == "artist"]
+        
+        related_artists = []
+        for mbid in related_mbids:
+            if not mbid:
+                continue
+            import asyncio
+            await asyncio.sleep(1) # Respect 1 req/sec limit
+            try:
+                rel_details = await self.client.get_artist(mbid, includes=["tags"])
+                aliases = [alias.get("name", "") for alias in rel_details.get("aliases", [])]
+                tags = [tag.get("name", "") for tag in rel_details.get("tags", [])]
+                related_artists.append(MBArtist(
+                    mbid=rel_details.get("id", ""),
+                    name=rel_details.get("name", ""),
+                    country=rel_details.get("country", ""),
+                    aliases=aliases,
+                    tags=tags
+                ))
+            except Exception:
+                pass
+        return related_artists

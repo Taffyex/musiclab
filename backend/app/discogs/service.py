@@ -21,11 +21,22 @@ class DiscogsService:
         Returns:
             A :class:`DiscogsArtist` if found, else ``None``.
         """
-        # TODO: Search for artist via client
-        # TODO: Pick best match from search results
-        # TODO: Fetch full artist details
-        # TODO: Map to DiscogsArtist schema
-        raise NotImplementedError
+        search_results = await self.client.search_artist(artist_name)
+        results = search_results.get("results", [])
+        if not results:
+            return None
+        
+        # Pick the exact match or first result
+        best_match = next((r for r in results if r.get("title", "").lower() == artist_name.lower()), results[0])
+        
+        details = await self.client.get_artist(best_match["id"])
+        
+        return DiscogsArtist(
+            id=details.get("id", 0),
+            name=details.get("name", ""),
+            profile=details.get("profile", ""),
+            url=details.get("uri", "")
+        )
 
     async def get_key_releases(
         self, artist_name: str
@@ -38,7 +49,20 @@ class DiscogsService:
         Returns:
             A list of :class:`DiscogsRelease` objects.
         """
-        # TODO: Resolve artist ID via search
-        # TODO: Fetch releases via client
-        # TODO: Map to DiscogsRelease schemas
-        raise NotImplementedError
+        search_results = await self.client.search_artist(artist_name)
+        results = search_results.get("results", [])
+        if not results:
+            return []
+            
+        best_match = next((r for r in results if r.get("title", "").lower() == artist_name.lower()), results[0])
+        releases_data = await self.client.get_artist_releases(best_match["id"])
+        
+        releases = []
+        for r in releases_data:
+            releases.append(DiscogsRelease(
+                id=r.get("id", 0),
+                title=r.get("title", ""),
+                year=r.get("year", 0),
+                type=r.get("type", "")
+            ))
+        return releases
