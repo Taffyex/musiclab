@@ -1,24 +1,34 @@
 <script lang="ts">
-	import { refreshProfile } from '$lib/stores/profile';
-	import { loading } from '$lib/stores/profile';
+	import { profileStore } from '$lib/stores';
+	import { apiClient } from '$lib/api';
 
 	interface Props {
 		label?: string;
 	}
 
 	let { label = 'Refresh Profile' }: Props = $props();
+	
+	let loading = $state(false);
 
 	async function handleClick() {
-		await refreshProfile();
+		loading = true;
+		try {
+			const res = await apiClient.lastfm.refresh();
+			profileStore.set(res);
+		} catch (err) {
+			console.error('Failed to refresh profile', err);
+		} finally {
+			loading = false;
+		}
 	}
 </script>
 
 <button
 	class="btn btn-secondary refresh-btn"
 	onclick={handleClick}
-	disabled={$loading}
+	disabled={loading}
 >
-	{#if $loading}
+	{#if loading}
 		<span class="spinner"></span>
 		Refreshing…
 	{:else}
