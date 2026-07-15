@@ -1,18 +1,44 @@
 <script lang="ts">
-	import favicon from '$lib/assets/favicon.svg';
+	import { onMount } from 'svelte';
+	import { themeStore, userStore } from '$lib/stores';
+	import { apiClient } from '$lib/api';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import '../app.css';
 
 	let { children } = $props();
+
+	onMount(async () => {
+		themeStore.init();
+		
+		try {
+			const res = await apiClient.auth.me();
+			if (res.user) {
+				userStore.login(res.user);
+			}
+		} catch (e) {
+			// Not logged in or error
+			console.log('Not logged in on load');
+		}
+	});
 </script>
 
-<svelte:head>
-	<link rel="icon" href={favicon} />
-</svelte:head>
-
-<div class="app-container">
+<div class="app-layout">
 	<Navbar />
-	<main>
+	<main class="container">
 		{@render children()}
 	</main>
 </div>
+
+<style>
+	.app-layout {
+		display: flex;
+		flex-direction: column;
+		min-height: 100vh;
+	}
+
+	main {
+		flex: 1;
+		padding-top: var(--space-xl);
+		padding-bottom: var(--space-xl);
+	}
+</style>

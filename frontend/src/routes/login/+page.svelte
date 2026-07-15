@@ -1,49 +1,97 @@
 <script lang="ts">
-  import { login } from '$lib/stores/auth';
-  
-  let username = '';
-  let password = '';
-  
-  async function handleSubmit() {
-    await login(username, password);
-    // Redirect happens in the store or client
-  }
+	import { userStore } from '$lib/stores';
+	import { apiClient } from '$lib/api';
+	import { goto } from '$app/navigation';
+
+	let username = $state('');
+	let password = $state('');
+	let error = $state('');
+	let loading = $state(false);
+
+	async function handleSubmit() {
+		error = '';
+		loading = true;
+		try {
+			await apiClient.auth.login(username, password);
+			const res = await apiClient.auth.me();
+			userStore.login(res.user);
+			goto('/discover');
+		} catch (err: any) {
+			error = err.message || 'Login failed. Please check your credentials.';
+		} finally {
+			loading = false;
+		}
+	}
 </script>
 
-<div class="login-container">
-  <h2>Login to MusicLab</h2>
-  <form on:submit|preventDefault={handleSubmit}>
-    <input type="text" bind:value={username} placeholder="Username" />
-    <input type="password" bind:value={password} placeholder="Password" />
-    <button type="submit">Login</button>
-  </form>
+<div class="login-container flex-center">
+	<div class="card login-card">
+		<h2 class="text-2xl font-bold mb-md text-center">Welcome Back</h2>
+		
+		{#if error}
+			<div class="error-msg mb-md">{error}</div>
+		{/if}
+
+		<form onsubmit={handleSubmit} class="flex-col gap-md">
+			<div>
+				<label class="label" for="username">Username</label>
+				<input 
+					type="text" 
+					id="username" 
+					class="input" 
+					bind:value={username} 
+					required 
+					disabled={loading}
+				/>
+			</div>
+			
+			<div>
+				<label class="label" for="password">Password</label>
+				<input 
+					type="password" 
+					id="password" 
+					class="input" 
+					bind:value={password} 
+					required 
+					disabled={loading}
+				/>
+			</div>
+			
+			<button type="submit" class="btn btn-primary w-full mt-sm" disabled={loading}>
+				{#if loading}
+					<span class="spinner"></span>
+				{:else}
+					Login
+				{/if}
+			</button>
+		</form>
+	</div>
 </div>
 
 <style>
-  .login-container {
-    max-width: 400px;
-    margin: 4rem auto;
-    padding: 2rem;
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-  }
-  h2 { margin-top: 0; }
-  input {
-    width: 100%;
-    margin-bottom: 1rem;
-    padding: 0.5rem;
-    border: 1px solid var(--border);
-    background: var(--bg);
-    color: var(--text);
-  }
-  button {
-    width: 100%;
-    padding: 0.5rem;
-    background: var(--accent);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
+	.login-container {
+		min-height: calc(100vh - 200px);
+	}
+	
+	.login-card {
+		width: 100%;
+		max-width: 400px;
+		padding: var(--space-xl);
+	}
+	
+	.w-full {
+		width: 100%;
+	}
+	
+	.mb-md { margin-bottom: var(--space-md); }
+	.mt-sm { margin-top: var(--space-sm); }
+	
+	.error-msg {
+		color: var(--error);
+		background: rgba(225, 112, 85, 0.1);
+		padding: var(--space-sm);
+		border-radius: var(--radius-md);
+		text-align: center;
+		font-size: 0.875rem;
+	}
 </style>

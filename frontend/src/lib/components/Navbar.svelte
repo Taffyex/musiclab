@@ -1,78 +1,55 @@
 <script lang="ts">
-	// TODO: Wire up active route highlighting
-	import { isAuthenticated, logout } from '$lib/stores/auth';
-	import ThemeToggle from './ThemeToggle.svelte';
+	import { userStore, themeStore } from '$lib/stores';
+	import { apiClient } from '$lib/api';
+	import { goto } from '$app/navigation';
 
 	async function handleLogout() {
-		await logout();
-		window.location.href = '/login';
+		try {
+			await apiClient.auth.logout();
+			userStore.logout();
+			goto('/login');
+		} catch (e) {
+			console.error('Failed to logout', e);
+		}
 	}
 </script>
 
-<nav class="navbar">
-	<div class="navbar-inner container flex-between">
-		<a href="/" class="logo">
-			<span class="logo-icon">🎵</span>
-			<span class="logo-text">MusicLab</span>
-		</a>
-
-		<div class="nav-links flex gap-md">
-			<a href="/" class="nav-link">Dashboard</a>
-			<a href="/discover" class="nav-link">Discover</a>
-			<a href="/chat" class="nav-link">Chat</a>
-			<a href="/settings" class="nav-link">Settings</a>
-		</div>
-
-		<div class="nav-actions flex gap-sm">
-			<ThemeToggle />
-			<button class="btn btn-ghost" onclick={handleLogout}>Logout</button>
-		</div>
+<nav class="navbar flex-between">
+	<div class="logo">
+		<a href="/" class="text-xl font-bold">MusicLab</a>
+	</div>
+	
+	<div class="nav-links flex-center gap-md">
+		<button class="btn btn-ghost" onclick={themeStore.toggle}>
+			{$themeStore === 'light' ? '🌙 Dark' : '☀️ Light'}
+		</button>
+		
+		{#if $userStore}
+			<a href="/discover" class="btn btn-ghost">Discover</a>
+			<a href="/chat" class="btn btn-ghost">Chat</a>
+			<div class="user-menu flex-center gap-sm">
+				<span class="text-sm">{$userStore.username}</span>
+				<button class="btn btn-secondary text-sm" onclick={handleLogout}>Logout</button>
+			</div>
+		{:else}
+			<a href="/login" class="btn btn-primary">Login</a>
+		{/if}
 	</div>
 </nav>
 
 <style>
 	.navbar {
+		padding: var(--space-md) var(--space-lg);
+		background: var(--card-bg);
+		border-bottom: 1px solid var(--border);
 		position: sticky;
 		top: 0;
 		z-index: 100;
-		background: var(--card-bg);
-		border-bottom: 1px solid var(--border);
-		backdrop-filter: blur(8px);
 	}
-
-	.navbar-inner {
-		height: 60px;
-	}
-
-	.logo {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		font-size: 1.25rem;
-		font-weight: 700;
+	.logo a {
 		color: var(--text);
 	}
-
-	.logo:hover {
+	.logo a:hover {
 		color: var(--accent);
-	}
-
-	.logo-icon {
-		font-size: 1.5rem;
-	}
-
-	.nav-link {
-		padding: 0.5rem 0.75rem;
-		border-radius: var(--radius-md);
-		color: var(--text-secondary);
-		font-weight: 500;
-		transition:
-			color var(--transition-fast),
-			background var(--transition-fast);
-	}
-
-	.nav-link:hover {
-		color: var(--text);
-		background: var(--bg);
 	}
 </style>

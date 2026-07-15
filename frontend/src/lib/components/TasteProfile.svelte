@@ -1,122 +1,81 @@
 <script lang="ts">
-	// TODO: Add charts/visualizations for listening stats
-	import type { LastfmProfile } from '$lib/types';
-	import { formatNumber } from '$lib/utils/formatting';
-
-	interface Props {
-		profile: LastfmProfile;
-	}
-
-	let { profile }: Props = $props();
+	import type { LastfmProfile } from '$lib/stores';
+	
+	let { profile = null, loading = false, error = null }: { profile?: LastfmProfile | null, loading?: boolean, error?: string | null } = $props();
 </script>
 
-<div class="taste-profile">
-	<div class="profile-header flex-between">
-		<div>
-			<h2>🎧 Your Taste Profile</h2>
-			<p class="text-secondary text-sm">Last.fm: {profile.username}</p>
+<div class="card taste-profile">
+	<h2 class="text-2xl font-bold mb-md">Your Musical Taste</h2>
+	
+	{#if loading}
+		<div class="flex-center py-xl">
+			<div class="spinner"></div>
 		</div>
-		<div class="stats flex gap-lg">
-			<div class="stat">
-				<span class="stat-value">{formatNumber(profile.playcount)}</span>
-				<span class="stat-label text-secondary text-sm">Scrobbles</span>
+	{:else if error}
+		<div class="error-msg">{error}</div>
+	{:else if profile}
+		<div class="grid grid-cols-2 gap-lg profile-content">
+			<div class="section">
+				<h3 class="text-lg font-medium text-secondary mb-sm">Top Artists</h3>
+				<ul class="flex-col gap-xs">
+					{#each profile.top_artists.slice(0, 5) as artist}
+						<li class="flex-between">
+							<a href={artist.url} target="_blank" rel="noopener noreferrer">{artist.name}</a>
+							<span class="text-sm text-secondary">{artist.playcount} plays</span>
+						</li>
+					{/each}
+				</ul>
 			</div>
-			<div class="stat">
-				<span class="stat-value">{formatNumber(profile.artist_count)}</span>
-				<span class="stat-label text-secondary text-sm">Artists</span>
+			
+			<div class="section">
+				<h3 class="text-lg font-medium text-secondary mb-sm">Top Genres</h3>
+				<div class="flex gap-sm wrap">
+					{#each profile.top_genres as genre}
+						<span class="tag">{genre.name}</span>
+					{/each}
+				</div>
 			</div>
 		</div>
-	</div>
-
-	{#if profile.top_artists.length > 0}
-		<section class="section">
-			<h3>Top Artists</h3>
-			<div class="artist-list">
-				{#each profile.top_artists.slice(0, 8) as artist, i}
-					<div class="artist-item flex-between">
-						<div class="flex gap-sm">
-							<span class="rank text-secondary">#{i + 1}</span>
-							<span class="font-medium">{artist.name}</span>
-						</div>
-						<span class="text-secondary text-sm">{formatNumber(artist.playcount)} plays</span>
-					</div>
-				{/each}
-			</div>
-		</section>
-	{/if}
-
-	{#if profile.top_tags.length > 0}
-		<section class="section">
-			<h3>Top Tags</h3>
-			<div class="flex gap-sm" style="flex-wrap: wrap;">
-				{#each profile.top_tags as tag}
-					<span class="tag">{tag}</span>
-				{/each}
-			</div>
-		</section>
-	{/if}
-
-	{#if profile.recent_tracks.length > 0}
-		<section class="section">
-			<h3>Recent Tracks</h3>
-			<div class="track-list">
-				{#each profile.recent_tracks.slice(0, 5) as track}
-					<div class="track-item flex gap-sm">
+		
+		<div class="section mt-lg">
+			<h3 class="text-lg font-medium text-secondary mb-sm">Recent Tracks</h3>
+			<ul class="flex-col gap-xs">
+				{#each profile.recent_tracks.slice(0, 3) as track}
+					<li class="track-item flex gap-sm">
 						<span class="font-medium">{track.name}</span>
 						<span class="text-secondary">by {track.artist}</span>
-					</div>
+					</li>
 				{/each}
-			</div>
-		</section>
+			</ul>
+		</div>
+	{:else}
+		<div class="text-secondary py-md">No profile data available.</div>
 	{/if}
 </div>
 
 <style>
 	.taste-profile {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-xl);
+		background: linear-gradient(135deg, var(--card-bg), var(--bg));
 	}
-
-	.profile-header {
-		flex-wrap: wrap;
-		gap: var(--space-md);
-	}
-
-	.stat {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-	}
-
-	.stat-value {
-		font-size: 1.5rem;
-		font-weight: 700;
-		color: var(--accent);
-	}
-
-	.section h3 {
-		margin-bottom: var(--space-md);
-		font-size: 1rem;
-		font-weight: 600;
-	}
-
-	.artist-list,
-	.track-list {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-sm);
-	}
-
-	.artist-item,
-	.track-item {
-		padding: var(--space-sm) var(--space-md);
+	.mb-md { margin-bottom: var(--space-md); }
+	.mb-sm { margin-bottom: var(--space-sm); }
+	.mt-lg { margin-top: var(--space-lg); }
+	.py-xl { padding: var(--space-xl) 0; }
+	.py-md { padding: var(--space-md) 0; }
+	.wrap { flex-wrap: wrap; }
+	
+	.error-msg {
+		color: var(--error);
+		padding: var(--space-md);
+		background: rgba(225, 112, 85, 0.1);
 		border-radius: var(--radius-md);
-		background: var(--bg);
 	}
-
-	.rank {
-		font-weight: 600;
-		min-width: 2rem;
+	
+	.track-item {
+		padding: var(--space-xs) 0;
+		border-bottom: 1px solid var(--border);
+	}
+	.track-item:last-child {
+		border-bottom: none;
 	}
 </style>

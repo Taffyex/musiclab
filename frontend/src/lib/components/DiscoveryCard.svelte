@@ -1,97 +1,58 @@
 <script lang="ts">
-	// TODO: Implement Lidarr add flow and explore similar navigation
-	import type { DiscoveryCard } from '$lib/types';
-	import { truncateText } from '$lib/utils/formatting';
-
-	interface Props {
-		card: DiscoveryCard;
-		onExplore?: (artistName: string) => void;
-		onAdd?: (card: DiscoveryCard) => void;
-	}
-
-	let { card, onExplore, onAdd }: Props = $props();
+	import type { DiscoveryCardItem } from '$lib/stores';
+	let { item }: { item: DiscoveryCardItem } = $props();
 </script>
 
-<article class="discovery-card card">
-	{#if card.image_url}
-		<div class="card-image">
-			<img src={card.image_url} alt={card.artist_name} />
-		</div>
-	{/if}
-
-	<div class="card-body">
-		<h3 class="artist-name">{card.artist_name}</h3>
-
-		{#if card.genres.length > 0}
-			<div class="genres flex gap-sm">
-				{#each card.genres.slice(0, 4) as genre}
-					<span class="tag">{genre}</span>
-				{/each}
-			</div>
-		{/if}
-
-		<p class="blurb text-secondary text-sm">
-			{truncateText(card.blurb, 150)}
-		</p>
-
-		<div class="card-actions flex gap-sm">
-			<button
-				class="btn btn-secondary"
-				onclick={() => onExplore?.(card.artist_name)}
-			>
-				🔍 Explore Similar
-			</button>
-			<button
-				class="btn btn-primary"
-				onclick={() => onAdd?.(card)}
-			>
-				➕ Add to Lidarr
-			</button>
-		</div>
+<div class="card discovery-card flex-col gap-sm">
+	<div class="header flex-between">
+		<h3 class="text-xl font-bold">{item.artist_name}</h3>
+		<span class="score-badge">{(item.similarity_score * 100).toFixed(0)}% Match</span>
 	</div>
-</article>
+	
+	<p class="text-secondary text-sm reason">{item.reason}</p>
+	
+	<div class="tags flex gap-xs wrap mt-sm">
+		{#each item.tags as tag}
+			<span class="tag">{tag}</span>
+		{/each}
+	</div>
+	
+	<div class="links flex gap-sm mt-md">
+		{#each Object.entries(item.listen_links) as [platform, url]}
+			<a href={url} target="_blank" rel="noopener noreferrer" class="btn btn-secondary text-sm platform-btn">
+				Listen on {platform}
+			</a>
+		{/each}
+	</div>
+</div>
 
 <style>
 	.discovery-card {
-		display: flex;
-		flex-direction: column;
-		overflow: hidden;
-	}
-
-	.card-image {
-		height: 180px;
-		overflow: hidden;
-		margin: calc(-1 * var(--space-lg));
-		margin-bottom: 0;
-	}
-
-	.card-image img {
-		width: 100%;
 		height: 100%;
-		object-fit: cover;
-	}
-
-	.card-body {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-sm);
-		padding-top: var(--space-md);
 	}
-
-	.artist-name {
-		font-size: 1.125rem;
+	
+	.score-badge {
+		background: rgba(108, 92, 231, 0.1);
+		color: var(--accent);
+		padding: 4px 8px;
+		border-radius: var(--radius-sm);
+		font-size: 0.75rem;
 		font-weight: 600;
 	}
-
-	.genres {
-		flex-wrap: wrap;
+	
+	.reason {
+		flex-grow: 1;
 	}
-
-	.blurb {
-		line-height: 1.5;
-	}
-
-	.card-actions {
-		margin-top: var(--space-sm);
+	
+	.gap-xs { gap: var(--space-xs); }
+	.mt-sm { margin-top: var(--space-sm); }
+	.mt-md { margin-top: var(--space-md); }
+	.wrap { flex-wrap: wrap; }
+	
+	.platform-btn {
+		flex: 1;
+		text-transform: capitalize;
 	}
 </style>

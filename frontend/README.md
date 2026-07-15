@@ -1,42 +1,42 @@
-# sv
+# MusicLab Frontend
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+The frontend for MusicLab is built with [SvelteKit](https://kit.svelte.dev/) (Svelte 5 runes mode) and provides a premium, responsive user interface to interact with the AI-powered music discovery backend.
 
-## Creating a project
+## Features
 
-If you're seeing this, you've probably already done this step. Congrats!
+- **Authentication**: Seamless login handling integrated with the FastAPI backend.
+- **State Management**: Built-in Svelte stores (`userStore`, `themeStore`, `profileStore`, `discoveryStore`) to manage global app state.
+- **API Clients**: Fully typed TypeScript wrappers for communicating with the backend's `auth`, `lastfm`, `discovery`, and `llm` endpoints, including native Server-Sent Events (SSE) support for real-time LLM chat streaming.
+- **Dynamic Theming**: Vanilla CSS custom properties with built-in dark and light mode support (`app.css`).
+- **Core Components**:
+  - `Navbar`: Navigation and theme toggling.
+  - `TasteProfile`: Visualizes the user's Last.fm top artists, genres, and recent tracks.
+  - `DiscoveryCard`: Displays AI-generated recommendations with match percentages and listen links.
+  - `ChatPanel`: Interactive chat interface for talking with the AI, streaming responses token-by-token.
 
-```sh
-# create a new project
-npx sv create my-app
-```
+## Project Structure
 
-To recreate this project with the same configuration:
-
-```sh
-# recreate this project
-npx sv@0.16.3 create --template minimal --types ts --no-install frontend
-```
+- `src/app.css`: Global styles, design system tokens, and utility classes.
+- `src/lib/api.ts`: Centralized API client wrappers (`apiClient`).
+- `src/lib/stores.ts`: Svelte global state stores.
+- `src/lib/components/`: Reusable UI components.
+- `src/routes/`: SvelteKit application routes (`/`, `/login`, `/discover`, `/chat`, `/settings`).
 
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+To start the development server:
 
 ```sh
+npm install
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
 ## Building
 
-To create a production version of your app:
+To create a production build:
 
 ```sh
 npm run build
 ```
 
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+The application uses `@sveltejs/adapter-static` or similar to generate a build folder that can be served by the FastAPI backend or an external static host.
