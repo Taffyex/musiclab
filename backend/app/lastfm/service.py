@@ -34,12 +34,32 @@ class LastfmService:
         Returns:
             A fully populated :class:`LastfmProfile`.
         """
-        # TODO: Build cache key from username
-        # TODO: Check cache via self.cache.get(key)
-        # TODO: On miss, call client methods (top_artists, top_albums, etc.)
-        # TODO: Assemble LastfmProfile from responses
-        # TODO: Cache the assembled profile
-        raise NotImplementedError
+        cache_key = f"lastfm:profile:{username}"
+        cached_data = await self.cache.get(cache_key)
+        if cached_data:
+            return LastfmProfile.model_validate(cached_data)
+
+        import asyncio
+        top_artists, top_albums, top_tags, recent_tracks, loved_tracks, weekly_artists = await asyncio.gather(
+            self.client.get_top_artists(username),
+            self.client.get_top_albums(username),
+            self.client.get_top_tags(username),
+            self.client.get_recent_tracks(username),
+            self.client.get_loved_tracks(username),
+            self.client.get_weekly_artist_chart(username),
+        )
+
+        profile = LastfmProfile(
+            top_artists=top_artists,
+            top_albums=top_albums,
+            top_tags=top_tags,
+            recent_tracks=recent_tracks,
+            loved_tracks=loved_tracks,
+            weekly_artists=weekly_artists,
+        )
+
+        await self.cache.set(cache_key, profile.model_dump(), ttl_seconds=3600)
+        return profile
 
     async def refresh_profile(self, username: str) -> LastfmProfile:
         """Force-refresh a user's Last.fm profile, bypassing the cache.
@@ -50,10 +70,30 @@ class LastfmService:
         Returns:
             A freshly fetched :class:`LastfmProfile`.
         """
-        # TODO: Invalidate existing cache entries for this user
-        # TODO: Fetch fresh data via self.client
-        # TODO: Cache and return new profile
-        raise NotImplementedError
+        cache_key = f"lastfm:profile:{username}"
+        await self.cache.invalidate(cache_key)
+        
+        import asyncio
+        top_artists, top_albums, top_tags, recent_tracks, loved_tracks, weekly_artists = await asyncio.gather(
+            self.client.get_top_artists(username),
+            self.client.get_top_albums(username),
+            self.client.get_top_tags(username),
+            self.client.get_recent_tracks(username),
+            self.client.get_loved_tracks(username),
+            self.client.get_weekly_artist_chart(username),
+        )
+
+        profile = LastfmProfile(
+            top_artists=top_artists,
+            top_albums=top_albums,
+            top_tags=top_tags,
+            recent_tracks=recent_tracks,
+            loved_tracks=loved_tracks,
+            weekly_artists=weekly_artists,
+        )
+
+        await self.cache.set(cache_key, profile.model_dump(), ttl_seconds=3600)
+        return profile
 
     async def save_profile(self, user_id: int, profile: LastfmProfile) -> None:
         """Persist the Last.fm profile to the ``lastfm_profiles`` table.
@@ -62,6 +102,10 @@ class LastfmService:
             user_id: Internal user ID.
             profile: The profile data to persist.
         """
-        # TODO: Serialize profile to JSON
-        # TODO: INSERT OR REPLACE into lastfm_profiles table
-        raise NotImplementedError
+        import json
+        profile_json = json.dumps(profile.model_dump())
+        await self.db.execute(
+            "INSERT OR REPLACE INTO lastfm_profiles (user_id, profile_data) VALUES (?, ?)",
+            (user_id, profile_json)
+        )
+        await self.db.commit()

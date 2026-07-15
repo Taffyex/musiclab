@@ -32,11 +32,18 @@ class CacheService:
         Returns:
             The cached dict, or ``None``.
         """
-        # TODO: SELECT value, expires_at FROM cache WHERE key = ?
-        # TODO: Check if expires_at > time.time()
-        # TODO: If expired, DELETE and return None
-        # TODO: Deserialize JSON and return
-        raise NotImplementedError
+        async with self.db.execute("SELECT value, expires_at FROM cache WHERE key = ?", (key,)) as cursor:
+            row = await cursor.fetchone()
+            
+        if not row:
+            return None
+            
+        if row["expires_at"] < time.time():
+            await self.db.execute("DELETE FROM cache WHERE key = ?", (key,))
+            await self.db.commit()
+            return None
+            
+        return json.loads(row["value"])
 
     async def set(
         self, key: str, value: dict, ttl_seconds: int = 3600
@@ -48,11 +55,13 @@ class CacheService:
             value: The dict to cache (will be JSON-serialized).
             ttl_seconds: Time-to-live in seconds (default 1 hour).
         """
-        # TODO: Compute expires_at = time.time() + ttl_seconds
-        # TODO: INSERT OR REPLACE into cache table
-        _ = json.dumps(value)  # validate serializable
-        _ = time.time()  # timestamp reference
-        raise NotImplementedError
+        expires_at = time.time() + ttl_seconds
+        val_json = json.dumps(value)
+        await self.db.execute(
+            "INSERT OR REPLACE INTO cache (key, value, expires_at) VALUES (?, ?, ?)",
+            (key, val_json, expires_at)
+        )
+        await self.db.commit()
 
     async def invalidate(self, pattern: str) -> None:
         """Delete all cache entries whose key matches *pattern*.
@@ -60,10 +69,10 @@ class CacheService:
         Args:
             pattern: A SQL LIKE pattern (e.g. ``"lastfm:user123:%"``).
         """
-        # TODO: DELETE FROM cache WHERE key LIKE ?
-        raise NotImplementedError
+        await self.db.execute("DELETE FROM cache WHERE key LIKE ?", (pattern,))
+        await self.db.commit()
 
     async def cleanup(self) -> None:
         """Remove all expired entries from the cache table."""
-        # TODO: DELETE FROM cache WHERE expires_at <= time.time()
-        raise NotImplementedError
+        await self.db.execute("DELETE FROM cache WHERE expires_at <= ?", (time.time(),))
+        await self.db.commit()

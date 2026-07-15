@@ -38,11 +38,20 @@ class LastfmClient:
         Returns:
             Parsed JSON response as a dict.
         """
-        # TODO: Build query params with api_key, method, format=json
-        # TODO: Make GET request via self._http
-        # TODO: Raise ExternalAPIError on non-2xx status
-        # TODO: Parse and return JSON
-        raise NotImplementedError
+        query = {"method": method, "api_key": self.api_key, "format": "json"}
+        if params:
+            query.update(params)
+            
+        try:
+            response = await self._http.get("", params=query)
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPStatusError as e:
+            from app.common.exceptions import ExternalAPIError
+            raise ExternalAPIError(f"Last.fm API error: {e.response.status_code}") from e
+        except httpx.RequestError as e:
+            from app.common.exceptions import ExternalAPIError
+            raise ExternalAPIError(f"Last.fm API request failed: {str(e)}") from e
 
     # ------------------------------------------------------------------
     # User methods
@@ -55,9 +64,9 @@ class LastfmClient:
 
         Last.fm method: ``user.getTopArtists``
         """
-        # TODO: Call self._request("user.getTopArtists", {...})
-        # TODO: Extract artist list from response
-        raise NotImplementedError
+        params = {"user": user, "period": period, "limit": limit}
+        data = await self._request("user.getTopArtists", params)
+        return data.get("topartists", {}).get("artist", [])
 
     async def get_top_albums(
         self, user: str, period: str = "overall", limit: int = 50
@@ -66,45 +75,45 @@ class LastfmClient:
 
         Last.fm method: ``user.getTopAlbums``
         """
-        # TODO: Call self._request("user.getTopAlbums", {...})
-        # TODO: Extract album list from response
-        raise NotImplementedError
+        params = {"user": user, "period": period, "limit": limit}
+        data = await self._request("user.getTopAlbums", params)
+        return data.get("topalbums", {}).get("album", [])
 
     async def get_top_tags(self, user: str) -> list[dict]:
         """Fetch top tags for a user.
 
         Last.fm method: ``user.getTopTags``
         """
-        # TODO: Call self._request("user.getTopTags", {...})
-        # TODO: Extract tag list from response
-        raise NotImplementedError
+        params = {"user": user}
+        data = await self._request("user.getTopTags", params)
+        return data.get("toptags", {}).get("tag", [])
 
     async def get_recent_tracks(self, user: str, limit: int = 50) -> list[dict]:
         """Fetch recently played tracks for a user.
 
         Last.fm method: ``user.getRecentTracks``
         """
-        # TODO: Call self._request("user.getRecentTracks", {...})
-        # TODO: Extract track list from response
-        raise NotImplementedError
+        params = {"user": user, "limit": limit}
+        data = await self._request("user.getRecentTracks", params)
+        return data.get("recenttracks", {}).get("track", [])
 
     async def get_loved_tracks(self, user: str, limit: int = 50) -> list[dict]:
         """Fetch loved tracks for a user.
 
         Last.fm method: ``user.getLovedTracks``
         """
-        # TODO: Call self._request("user.getLovedTracks", {...})
-        # TODO: Extract track list from response
-        raise NotImplementedError
+        params = {"user": user, "limit": limit}
+        data = await self._request("user.getLovedTracks", params)
+        return data.get("lovedtracks", {}).get("track", [])
 
     async def get_weekly_artist_chart(self, user: str) -> list[dict]:
         """Fetch current weekly artist chart for a user.
 
         Last.fm method: ``user.getWeeklyArtistChart``
         """
-        # TODO: Call self._request("user.getWeeklyArtistChart", {...})
-        # TODO: Extract artist list from response
-        raise NotImplementedError
+        params = {"user": user}
+        data = await self._request("user.getWeeklyArtistChart", params)
+        return data.get("weeklyartistchart", {}).get("artist", [])
 
     # ------------------------------------------------------------------
     # Artist methods
@@ -117,18 +126,18 @@ class LastfmClient:
 
         Last.fm method: ``artist.getSimilar``
         """
-        # TODO: Call self._request("artist.getSimilar", {...})
-        # TODO: Extract similar-artist list from response
-        raise NotImplementedError
+        params = {"artist": artist, "limit": limit, "autocorrect": 1}
+        data = await self._request("artist.getSimilar", params)
+        return data.get("similarartists", {}).get("artist", [])
 
     async def get_artist_top_tags(self, artist: str) -> list[dict]:
         """Fetch top tags applied to an artist.
 
         Last.fm method: ``artist.getTopTags``
         """
-        # TODO: Call self._request("artist.getTopTags", {...})
-        # TODO: Extract tag list from response
-        raise NotImplementedError
+        params = {"artist": artist, "autocorrect": 1}
+        data = await self._request("artist.getTopTags", params)
+        return data.get("toptags", {}).get("tag", [])
 
     # ------------------------------------------------------------------
     # Lifecycle
