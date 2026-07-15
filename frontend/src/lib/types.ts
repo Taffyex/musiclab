@@ -46,14 +46,15 @@ export interface RecentTrack {
 export interface DiscoveryCard {
 	id: string;
 	artist_name: string;
-	genres: string[];
-	blurb: string;
-	reason: string;
-	image_url?: string;
-	spotify_url?: string;
-	lastfm_url?: string;
-	similar_artists?: string[];
-	created_at: string;
+	genre_tags: string[];
+	era: string;
+	ai_blurb: string;
+	why_it_matches: string;
+	lastfm_listeners?: number | null;
+	lastfm_playcount?: number | null;
+	mb_data?: Record<string, any> | null;
+	discogs_data?: Record<string, any> | null;
+	already_in_lidarr: boolean;
 }
 
 export interface DiscoveryBatch {

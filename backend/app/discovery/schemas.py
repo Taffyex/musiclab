@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 class DiscoveryCard(BaseModel):
     """A single artist recommendation card with enriched metadata."""
 
+    id: str
     artist_name: str
     genre_tags: list[str] = Field(default_factory=list)
     era: str = ""

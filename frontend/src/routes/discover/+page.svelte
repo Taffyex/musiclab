@@ -104,7 +104,7 @@
 			</div>
 		{:else if $discoveryStore}
 			<div class="grid grid-cols-4 recommendations-grid">
-				{#each $discoveryStore.recommendations as item}
+				{#each $discoveryStore.cards as item}
 					<DiscoveryCard {item} />
 				{/each}
 			</div>

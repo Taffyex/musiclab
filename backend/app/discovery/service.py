@@ -86,17 +86,31 @@ class DiscoveryService:
         # Parse output - assuming the LLM returns a JSON array of DiscoveryRecommendation objects
         try:
             raw_recs = json.loads(llm_response.content)
-            recs = [raw_rec.get("artist_name", "") for raw_rec in raw_recs if raw_rec.get("artist_name")]
+            if not isinstance(raw_recs, list):
+                raw_recs = []
         except Exception:
-            recs = []
+            raw_recs = []
             
         # 4. Enrich each artist
         cards = []
-        for name in recs:
+        for raw_rec in raw_recs:
+            name = raw_rec.get("artist_name")
+            if not name:
+                continue
             enriched = await self.enrich_artist(name)
+            lastfm_data = enriched.get("lastfm") or {}
+            
             card = DiscoveryCard(
+                id=str(uuid4()),
                 artist_name=name,
-                metadata=enriched
+                genre_tags=raw_rec.get("genre_tags", []),
+                era=raw_rec.get("era", ""),
+                ai_blurb=raw_rec.get("ai_blurb", ""),
+                why_it_matches=raw_rec.get("why_it_matches", ""),
+                lastfm_listeners=lastfm_data.get("listeners"),
+                lastfm_playcount=lastfm_data.get("playcount"),
+                mb_data=enriched.get("musicbrainz"),
+                discogs_data=enriched.get("discogs")
             )
             cards.append(card)
             
@@ -136,16 +150,30 @@ class DiscoveryService:
         
         try:
             raw_recs = json.loads(llm_response.content)
-            recs = [raw_rec.get("artist_name", "") for raw_rec in raw_recs if raw_rec.get("artist_name")]
+            if not isinstance(raw_recs, list):
+                raw_recs = []
         except Exception:
-            recs = []
+            raw_recs = []
             
         cards = []
-        for name in recs:
+        for raw_rec in raw_recs:
+            name = raw_rec.get("artist_name")
+            if not name:
+                continue
             enriched = await self.enrich_artist(name)
+            lastfm_data = enriched.get("lastfm") or {}
+            
             card = DiscoveryCard(
+                id=str(import_uuid.uuid4()) if 'import_uuid' in locals() else __import__("uuid").uuid4().hex,
                 artist_name=name,
-                metadata=enriched
+                genre_tags=raw_rec.get("genre_tags", []),
+                era=raw_rec.get("era", ""),
+                ai_blurb=raw_rec.get("ai_blurb", ""),
+                why_it_matches=raw_rec.get("why_it_matches", ""),
+                lastfm_listeners=lastfm_data.get("listeners"),
+                lastfm_playcount=lastfm_data.get("playcount"),
+                mb_data=enriched.get("musicbrainz"),
+                discogs_data=enriched.get("discogs")
             )
             cards.append(card)
             

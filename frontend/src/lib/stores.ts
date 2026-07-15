@@ -1,4 +1,5 @@
 import { writable, derived } from 'svelte/store';
+import type { DiscoveryBatch } from '$lib/types';
 
 // Types (simplified for stores)
 export interface User {
@@ -15,19 +16,6 @@ export interface LastfmProfile {
 	recent_tracks: Array<{ name: string; artist: string; date: string }>;
 }
 
-export interface DiscoveryCardItem {
-	artist_name: string;
-	reason: string;
-	tags: string[];
-	similarity_score: number;
-	listen_links: Record<string, string>;
-}
-
-export interface DiscoveryBatch {
-	id: number;
-	created_at: string;
-	recommendations: DiscoveryCardItem[];
-}
 
 // User Store
 function createUserStore() {

@@ -92,6 +92,35 @@ export const apiClient = {
 			return res.json();
 		}
 	},
+	lidarr: {
+		getLibrary: async () => {
+			const res = await fetchBase('/lidarr/library');
+			return res.json();
+		},
+		getProfiles: async () => {
+			const res = await fetchBase('/lidarr/profiles');
+			return res.json();
+		},
+		getRootFolders: async () => {
+			const res = await fetchBase('/lidarr/root-folders');
+			return res.json();
+		},
+		addArtist: async (data: { artistName: string, foreignArtistId: string, qualityProfileId: number, rootFolderPath: string, monitored?: boolean }) => {
+			// Note: The backend schema expects snake_case for the API request
+			const backendData = {
+				name: data.artistName,
+				foreign_artist_id: data.foreignArtistId,
+				quality_profile_id: data.qualityProfileId,
+				root_folder_path: data.rootFolderPath,
+				monitored: data.monitored ?? true
+			};
+			const res = await fetchBase('/lidarr/add', {
+				method: 'POST',
+				body: JSON.stringify(backendData)
+			});
+			return res.json();
+		}
+	},
 	llm: {
 		chatMessage: async function* (content: string) {
 			const res = await fetch(`${API_BASE}/llm/chat/message`, {
