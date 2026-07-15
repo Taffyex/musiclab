@@ -1,0 +1,21 @@
+# ─── Python ───
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+*.db
+
+# ─── Node / SvelteKit ───
+node_modules/
+.svelte-kit/
+build/
+
+# ─── Project-specific ───
+data/
+.env
+
+# ─── IDE ───
+.vscode/
+.idea/
+*.swp
+*.swo

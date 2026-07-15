@@ -1,0 +1,1 @@
+# MusicLab auth package
