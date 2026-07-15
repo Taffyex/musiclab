@@ -45,23 +45,19 @@ try:
     from app.auth.router import router as auth_router
     app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
 except ImportError:
-    pass  # TODO: remove try/except once auth module is implemented
+    pass
 
-# TODO: uncomment as each router module is created
-# from app.lastfm.router import router as lastfm_router
-# app.include_router(lastfm_router, prefix="/api/lastfm", tags=["lastfm"])
+from app.lastfm.router import router as lastfm_router
+app.include_router(lastfm_router, prefix="/api/lastfm", tags=["lastfm"])
 
-# from app.lidarr.router import router as lidarr_router
-# app.include_router(lidarr_router, prefix="/api/lidarr", tags=["lidarr"])
+from app.lidarr.router import router as lidarr_router
+app.include_router(lidarr_router, prefix="/api/lidarr", tags=["lidarr"])
 
-# from app.discover.router import router as discover_router
-# app.include_router(discover_router, prefix="/api/discover", tags=["discover"])
+from app.discovery.router import router as discovery_router
+app.include_router(discovery_router, prefix="/api/discovery", tags=["discovery"])
 
-# from app.chat.router import router as chat_router
-# app.include_router(chat_router, prefix="/api/chat", tags=["chat"])
-
-# from app.settings.router import router as settings_router
-# app.include_router(settings_router, prefix="/api/settings", tags=["settings"])
+from app.llm.router import router as llm_router
+app.include_router(llm_router, prefix="/api/llm", tags=["llm"])
 
 
 # ──────────────────────────────────────────────

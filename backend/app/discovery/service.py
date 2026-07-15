@@ -57,16 +57,61 @@ class DiscoveryService:
         Returns:
             A :class:`DiscoveryBatch` containing enriched cards.
         """
-        # TODO: Load user Last.fm profile
-        # TODO: Load user memory block
-        # TODO: Get Lidarr library names for exclusion
-        # TODO: Build system prompt with discovery mode
-        # TODO: Call LLM to generate recommendations
-        # TODO: Parse LLM output into artist names
-        # TODO: Enrich each artist via self.enrich_artist(name)
-        # TODO: Build DiscoveryCard objects
-        # TODO: Persist batch to history table
-        raise NotImplementedError
+        from app.llm.prompts import build_system_prompt
+        import json
+        import time
+        from uuid import uuid4
+        
+        # 1. Load user profile and memory
+        profile = None
+        user_row = await self.db.execute("SELECT lastfm_username FROM users WHERE id = ?", (user_id,))
+        async with user_row as cursor:
+            row = await cursor.fetchone()
+            if row and row["lastfm_username"]:
+                profile = await self.lastfm.get_full_profile(row["lastfm_username"])
+                
+        async with self.db.execute("SELECT data FROM memory_blocks WHERE user_id = ?", (user_id,)) as cursor:
+            row = await cursor.fetchone()
+        memory = json.loads(row["data"]) if row else {}
+        
+        # 2. Get library artist names
+        library_names = await self.lidarr.get_library_artist_names()
+        
+        # 3. Build prompt and ask LLM
+        system_prompt = build_system_prompt(profile=profile, memory=memory, library=library_names, mode="discovery")
+        user_prompt = f"Please generate {count} artist recommendations."
+        
+        llm_response = await self.llm.generate(system_prompt, user_prompt)
+        
+        # Parse output - assuming the LLM returns a JSON array of DiscoveryRecommendation objects
+        try:
+            raw_recs = json.loads(llm_response.content)
+            recs = [raw_rec.get("artist_name", "") for raw_rec in raw_recs if raw_rec.get("artist_name")]
+        except Exception:
+            recs = []
+            
+        # 4. Enrich each artist
+        cards = []
+        for name in recs:
+            enriched = await self.enrich_artist(name)
+            card = DiscoveryCard(
+                artist_name=name,
+                metadata=enriched
+            )
+            cards.append(card)
+            
+        # 5. Persist batch
+        batch = DiscoveryBatch(
+            id=str(uuid4()),
+            created_at=int(time.time()),
+            cards=cards
+        )
+        await self.db.execute(
+            "INSERT INTO discovery_history (id, user_id, batch_data, created_at) VALUES (?, ?, ?, ?)",
+            (batch.id, user_id, json.dumps(batch.model_dump()), batch.created_at)
+        )
+        await self.db.commit()
+        return batch
 
     async def explore_similar(
         self, user_id: int, artist_name: str, count: int = 5
@@ -81,10 +126,30 @@ class DiscoveryService:
         Returns:
             A list of enriched :class:`DiscoveryCard` objects.
         """
-        # TODO: Build system prompt with explore mode
-        # TODO: Ask LLM for similar artists
-        # TODO: Enrich each and build cards
-        raise NotImplementedError
+        from app.llm.prompts import build_system_prompt
+        import json
+        
+        system_prompt = build_system_prompt(mode="explore")
+        user_prompt = f"Please explore {count} artists similar to {artist_name}."
+        
+        llm_response = await self.llm.generate(system_prompt, user_prompt)
+        
+        try:
+            raw_recs = json.loads(llm_response.content)
+            recs = [raw_rec.get("artist_name", "") for raw_rec in raw_recs if raw_rec.get("artist_name")]
+        except Exception:
+            recs = []
+            
+        cards = []
+        for name in recs:
+            enriched = await self.enrich_artist(name)
+            card = DiscoveryCard(
+                artist_name=name,
+                metadata=enriched
+            )
+            cards.append(card)
+            
+        return cards
 
     async def enrich_artist(self, artist_name: str) -> dict:
         """Fetch metadata for an artist from all available sources.
@@ -98,9 +163,19 @@ class DiscoveryService:
         Returns:
             A dict with keys ``"lastfm"``, ``"discogs"``, ``"musicbrainz"``.
         """
-        # TODO: Gather data from all three services concurrently
-        # TODO: Return merged dict
-        raise NotImplementedError
+        import asyncio
+        lastfm_data, discogs_data, mb_data = await asyncio.gather(
+            self.lastfm.get_full_profile(artist_name), # using profile for artist data temporarily or a custom call
+            self.discogs.enrich_artist(artist_name),
+            self.musicbrainz.enrich_artist(artist_name),
+            return_exceptions=True
+        )
+        
+        return {
+            "lastfm": lastfm_data.model_dump() if not isinstance(lastfm_data, Exception) and lastfm_data else None,
+            "discogs": discogs_data.model_dump() if not isinstance(discogs_data, Exception) and discogs_data else None,
+            "musicbrainz": mb_data.model_dump() if not isinstance(mb_data, Exception) and mb_data else None
+        }
 
     async def get_history(self, user_id: int) -> list[DiscoveryBatch]:
         """Return past discovery batches for a user.
@@ -111,6 +186,15 @@ class DiscoveryService:
         Returns:
             A list of :class:`DiscoveryBatch` objects, newest first.
         """
-        # TODO: Query discovery_history table
-        # TODO: Deserialize and return batches
-        raise NotImplementedError
+        import json
+        async with self.db.execute(
+            "SELECT batch_data FROM discovery_history WHERE user_id = ? ORDER BY created_at DESC", 
+            (user_id,)
+        ) as cursor:
+            rows = await cursor.fetchall()
+            
+        batches = []
+        for row in rows:
+            batches.append(DiscoveryBatch.model_validate(json.loads(row["batch_data"])))
+            
+        return batches
