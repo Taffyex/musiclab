@@ -19,7 +19,6 @@ def hash_password(password: str) -> str:
     Returns:
         The bcrypt hash as a UTF-8 string.
     """
-    # TODO: implement — use bcrypt.hashpw with bcrypt.gensalt()
     hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
     return hashed.decode("utf-8")
 
@@ -31,7 +30,6 @@ def verify_password(password: str, password_hash: str) -> bool:
     Returns:
         True if the password matches, False otherwise.
     """
-    # TODO: implement — use bcrypt.checkpw
     return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
 
 
@@ -45,7 +43,6 @@ async def create_session(db: aiosqlite.Connection, user_id: int) -> str:
     token = secrets.token_urlsafe(32)
     expires_at = datetime.now(timezone.utc) + timedelta(days=7)
 
-    # TODO: INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)
     await db.execute(
         "INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)",
         (token, user_id, expires_at.isoformat()),
@@ -59,6 +56,5 @@ async def invalidate_session(db: aiosqlite.Connection, token: str) -> None:
     """
     Delete a session token from the sessions table (logout).
     """
-    # TODO: DELETE FROM sessions WHERE token = ?
     await db.execute("DELETE FROM sessions WHERE token = ?", (token,))
     await db.commit()

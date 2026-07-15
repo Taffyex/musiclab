@@ -48,5 +48,16 @@ async def init_db() -> None:
         await db.executescript(schema_sql)
         await db.commit()
 
-    # TODO: seed default admin user from AUTH_USERNAME / AUTH_PASSWORD_HASH
-    #       if users table is empty
+    # seed default admin user from AUTH_USERNAME / AUTH_PASSWORD_HASH
+    from app.config import settings
+    async with aiosqlite.connect(DB_PATH) as db:
+        # Check if users table is empty
+        async with db.execute("SELECT COUNT(*) FROM users") as cursor:
+            row = await cursor.fetchone()
+            if row and row[0] == 0:
+                if settings.auth_username and settings.auth_password_hash:
+                    await db.execute(
+                        "INSERT INTO users (username, password_hash) VALUES (?, ?)",
+                        (settings.auth_username, settings.auth_password_hash)
+                    )
+                    await db.commit()

@@ -32,17 +32,33 @@ async def get_current_user(
             detail="Not authenticated",
         )
 
-    # TODO: query sessions table joined with users to get user row
-    #   SELECT u.id, u.username, u.lastfm_username, u.llm_provider, s.expires_at
-    #   FROM sessions s JOIN users u ON s.user_id = u.id
-    #   WHERE s.token = ?
+    from datetime import datetime, timezone
+    
+    async with db.execute(
+        "SELECT u.id, u.username, u.lastfm_username, u.llm_provider, s.expires_at "
+        "FROM sessions s JOIN users u ON s.user_id = u.id "
+        "WHERE s.token = ?", (session_token,)
+    ) as cursor:
+        row = await cursor.fetchone()
 
-    # TODO: check that session has not expired (expires_at > now)
+    if not row:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid session token",
+        )
 
-    # TODO: return user dict (without password_hash)
+    # Convert expires_at string back to datetime if necessary, assuming it was stored as ISO string
+    expires_at = datetime.fromisoformat(row["expires_at"]) if isinstance(row["expires_at"], str) else row["expires_at"]
+    
+    if expires_at < datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired",
+        )
 
-    # Placeholder — always raises until implemented
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Not authenticated (stub)",
-    )
+    return {
+        "id": row["id"],
+        "username": row["username"],
+        "lastfm_username": row["lastfm_username"],
+        "llm_provider": row["llm_provider"]
+    }

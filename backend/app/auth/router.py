@@ -26,12 +26,25 @@ async def login(
 
     Sets an HTTP-only session cookie on success.
     """
-    # TODO: parse username & password from form data (python-multipart)
-    # TODO: query users table for matching username
-    # TODO: verify password with auth.service.verify_password()
-    # TODO: create session via auth.service.create_session()
-    # TODO: set session cookie on response
-    return {"message": "TODO: implement login"}
+    from fastapi import HTTPException, status
+    from app.auth import service
+
+    form = await request.form()
+    username = form.get("username")
+    password = form.get("password")
+
+    if not username or not password:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username and password required")
+
+    async with db.execute("SELECT id, password_hash FROM users WHERE username = ?", (username,)) as cursor:
+        user = await cursor.fetchone()
+
+    if not user or not service.verify_password(password, user["password_hash"]):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
+
+    token = await service.create_session(db, user["id"])
+    response.set_cookie(key="session", value=token, httponly=True, samesite="lax", max_age=7*24*60*60)
+    return {"message": "Logged in successfully"}
 
 
 @router.post("/logout")
@@ -43,10 +56,13 @@ async def logout(
     """
     Invalidate the current session and clear the session cookie.
     """
-    # TODO: extract session token from cookie
-    # TODO: invalidate session via auth.service.invalidate_session()
-    # TODO: delete session cookie from response
-    return {"message": "TODO: implement logout"}
+    from app.auth import service
+    
+    token = request.cookies.get("session")
+    if token:
+        await service.invalidate_session(db, token)
+    response.delete_cookie("session")
+    return {"message": "Logged out successfully"}
 
 
 @router.get("/me")
@@ -56,5 +72,5 @@ async def me(
     """
     Return info about the currently authenticated user.
     """
-    # TODO: return sanitized user dict (exclude password_hash)
+    # The user dict is already sanitized by get_current_user
     return {"user": current_user}
