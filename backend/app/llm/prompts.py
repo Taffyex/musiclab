@@ -98,9 +98,41 @@ def build_system_prompt(
     Returns:
         The fully assembled system prompt string.
     """
-    # TODO: Start with BASE_SYSTEM_PROMPT
-    # TODO: If profile, format PROFILE_TEMPLATE and append
-    # TODO: If memory, format MEMORY_TEMPLATE and append
-    # TODO: If library, append "Artists already in library: ..." section
-    # TODO: Append mode-specific prompt (DISCOVERY / EXPLORE / CHAT)
-    raise NotImplementedError
+    parts = [BASE_SYSTEM_PROMPT]
+    
+    if profile:
+        top_artists = ", ".join([a.name for a in profile.top_artists])
+        top_albums = ", ".join([a.name for a in profile.top_albums])
+        top_tags = ", ".join([t.name for t in profile.top_tags])
+        recent_tracks = ", ".join([t.name for t in profile.recent_tracks])
+        loved_tracks = ", ".join([t.name for t in profile.loved_tracks])
+        weekly_artists = ", ".join([a.name for a in profile.weekly_artists])
+        
+        parts.append(PROFILE_TEMPLATE.format(
+            top_artists=top_artists or "None",
+            top_albums=top_albums or "None",
+            top_tags=top_tags or "None",
+            recent_tracks=recent_tracks or "None",
+            loved_tracks=loved_tracks or "None",
+            weekly_artists=weekly_artists or "None"
+        ))
+        
+    if memory:
+        parts.append(MEMORY_TEMPLATE.format(
+            core_preferences=", ".join(memory.get("core_preferences", [])) or "None",
+            liked_recommendations=", ".join(memory.get("liked_recommendations", [])) or "None",
+            disliked_recommendations=", ".join(memory.get("disliked_recommendations", [])) or "None",
+            noted_patterns=", ".join(memory.get("noted_patterns", [])) or "None"
+        ))
+        
+    if library:
+        parts.append("## Artists already in library\n" + ", ".join(library) + "\n")
+        
+    if mode == "discovery":
+        parts.append(DISCOVERY_PROMPT)
+    elif mode == "explore":
+        parts.append(EXPLORE_PROMPT)
+    else:
+        parts.append(CHAT_PROMPT)
+        
+    return "\n".join(parts)

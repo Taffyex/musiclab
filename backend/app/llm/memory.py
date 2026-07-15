@@ -33,10 +33,14 @@ class MemoryService:
             A dict representing the user's memory block, or an empty dict
             if no memory exists yet.
         """
-        # TODO: SELECT from memory_blocks WHERE user_id = ?
-        # TODO: Deserialize JSON column to dict
-        # TODO: Return empty dict on miss
-        raise NotImplementedError
+        import json
+        async with self.db.execute("SELECT data FROM memory_blocks WHERE user_id = ?", (user_id,)) as cursor:
+            row = await cursor.fetchone()
+        
+        if not row:
+            return {}
+            
+        return json.loads(row["data"])
 
     async def extract_and_update(
         self,
@@ -52,13 +56,28 @@ class MemoryService:
             user_id: Internal user ID.
             conversation: The list of chat messages to analyse.
         """
-        # TODO: Format conversation into a single string
-        # TODO: Call self.llm.generate with MEMORY_EXTRACTION_PROMPT
-        # TODO: Parse LLM response as MemoryUpdate
-        # TODO: Load existing memory via self.get_memory(user_id)
-        # TODO: Merge via self.merge_memory(existing, update)
-        # TODO: Persist updated memory to DB
-        raise NotImplementedError
+        from app.llm.prompts import MEMORY_EXTRACTION_PROMPT
+        import json
+        
+        conv_str = "\n".join([f"{msg.role}: {msg.content}" for msg in conversation])
+        prompt = f"{MEMORY_EXTRACTION_PROMPT}\n\nConversation:\n{conv_str}"
+        
+        response = await self.llm.generate(prompt)
+        try:
+            update_data = json.loads(response.content)
+            update = MemoryUpdate(**update_data)
+        except Exception:
+            return
+            
+        existing = await self.get_memory(user_id)
+        merged = await self.merge_memory(existing, update)
+        
+        merged_json = json.dumps(merged)
+        await self.db.execute(
+            "INSERT OR REPLACE INTO memory_blocks (user_id, data) VALUES (?, ?)",
+            (user_id, merged_json)
+        )
+        await self.db.commit()
 
     async def merge_memory(
         self,
@@ -77,9 +96,20 @@ class MemoryService:
         Returns:
             The merged memory dict.
         """
-        # TODO: Append new.core_preferences to existing["core_preferences"]
-        # TODO: Append new.liked_recommendations
-        # TODO: Append new.disliked_recommendations
-        # TODO: Append new.noted_patterns
-        # TODO: Deduplicate each list
-        raise NotImplementedError
+        def merge_list(key: str, new_items: list[str]) -> list[str]:
+            current = existing.get(key, [])
+            # Deduplicate while preserving order
+            seen = set()
+            merged_list = []
+            for item in current + new_items:
+                if item not in seen:
+                    seen.add(item)
+                    merged_list.append(item)
+            return merged_list
+
+        return {
+            "core_preferences": merge_list("core_preferences", new.core_preferences),
+            "liked_recommendations": merge_list("liked_recommendations", new.liked_recommendations),
+            "disliked_recommendations": merge_list("disliked_recommendations", new.disliked_recommendations),
+            "noted_patterns": merge_list("noted_patterns", new.noted_patterns),
+        }

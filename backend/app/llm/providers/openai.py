@@ -33,13 +33,19 @@ class OpenAIProvider(LLMProvider):
     ) -> LLMResponse:
         """Generate a non-streaming response via the OpenAI API.
 
-        TODO:
-            - Build messages list with system and user roles
-            - Call self._client.chat.completions.create(...)
-            - Map response.choices[0].message to LLMResponse
-            - Extract usage stats
-        """
-        raise NotImplementedError
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_message},
+        ]
+        response = await self._client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+        )
+        msg = response.choices[0].message
+        return LLMResponse(
+            content=msg.content or "",
+            usage=dict(response.usage) if response.usage else None,
+        )
 
     async def stream(
         self,
@@ -48,14 +54,18 @@ class OpenAIProvider(LLMProvider):
     ) -> AsyncIterator[str]:
         """Stream response tokens from the OpenAI API.
 
-        TODO:
-            - Call self._client.chat.completions.create(..., stream=True)
-            - Iterate async over chunks
-            - Yield delta.content strings
-        """
-        raise NotImplementedError
-        # Make this a proper async generator:
-        yield ""  # pragma: no cover
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_message},
+        ]
+        stream = await self._client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            stream=True,
+        )
+        async for chunk in stream:
+            if chunk.choices and chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content
 
     async def generate_with_tools(
         self,
@@ -65,10 +75,35 @@ class OpenAIProvider(LLMProvider):
     ) -> LLMResponse:
         """Generate a response with function-calling via the OpenAI API.
 
-        TODO:
-            - Convert tools to OpenAI function-calling format
-            - Call self._client.chat.completions.create(..., tools=tools)
-            - Extract tool_calls from response
-            - Map to LLMResponse with tool_calls populated
-        """
-        raise NotImplementedError
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_message},
+        ]
+        
+        # Format tools for OpenAI
+        openai_tools = [{"type": "function", "function": t} for t in tools]
+        
+        response = await self._client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            tools=openai_tools,
+        )
+        msg = response.choices[0].message
+        
+        tool_calls = []
+        if msg.tool_calls:
+            for tc in msg.tool_calls:
+                tool_calls.append({
+                    "id": tc.id,
+                    "type": "function",
+                    "function": {
+                        "name": tc.function.name,
+                        "arguments": tc.function.arguments,
+                    }
+                })
+                
+        return LLMResponse(
+            content=msg.content or "",
+            tool_calls=tool_calls if tool_calls else None,
+            usage=dict(response.usage) if response.usage else None,
+        )
