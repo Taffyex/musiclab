@@ -8,34 +8,36 @@ from app.lidarr.schemas import AddArtistRequest, LidarrArtist
 
 router = APIRouter(prefix="/lidarr", tags=["lidarr"])
 
+from app.config import settings
+from app.lidarr.client import LidarrClient
+from app.lidarr.service import LidarrService
+
+def get_lidarr_service() -> LidarrService:
+    client = LidarrClient(base_url=settings.lidarr_url, api_key=settings.lidarr_api_key)
+    return LidarrService(client=client)
 
 @router.get("/library", response_model=list[LidarrArtist])
-async def list_library() -> list[LidarrArtist]:
+async def list_library(service: LidarrService = Depends(get_lidarr_service)) -> list[LidarrArtist]:
     """List all artists in the Lidarr library."""
-    # TODO: Inject LidarrService via Depends
-    # TODO: Call service.get_library()
-    raise NotImplementedError
+    return await service.get_library()
 
 
 @router.post("/add", response_model=LidarrArtist)
-async def add_artist(request: AddArtistRequest) -> LidarrArtist:
+async def add_artist(
+    request: AddArtistRequest,
+    service: LidarrService = Depends(get_lidarr_service)
+) -> LidarrArtist:
     """Add an artist to the Lidarr library."""
-    # TODO: Inject LidarrService via Depends
-    # TODO: Call service.add_artist_to_library(request)
-    raise NotImplementedError
+    return await service.add_artist_to_library(request)
 
 
 @router.get("/profiles")
-async def list_quality_profiles() -> list[dict]:
+async def list_quality_profiles(service: LidarrService = Depends(get_lidarr_service)) -> list[dict]:
     """List available Lidarr quality profiles."""
-    # TODO: Inject LidarrClient or LidarrService via Depends
-    # TODO: Return quality profiles
-    raise NotImplementedError
+    return await service.client.get_quality_profiles()
 
 
 @router.get("/root-folders")
-async def list_root_folders() -> list[dict]:
+async def list_root_folders(service: LidarrService = Depends(get_lidarr_service)) -> list[dict]:
     """List configured Lidarr root folders."""
-    # TODO: Inject LidarrClient or LidarrService via Depends
-    # TODO: Return root folders
-    raise NotImplementedError
+    return await service.client.get_root_folders()

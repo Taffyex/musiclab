@@ -31,54 +31,78 @@ class LidarrClient:
 
         Endpoint: ``GET /api/v1/artist``
         """
-        # TODO: GET /api/v1/artist
-        # TODO: Return parsed JSON list
-        raise NotImplementedError
+        try:
+            response = await self._http.get("/api/v1/artist")
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            from app.common.exceptions import ExternalAPIError
+            raise ExternalAPIError(f"Lidarr API error: {str(e)}") from e
 
     async def get_artist(self, artist_id: int) -> dict:
         """Get a single artist by Lidarr ID.
 
         Endpoint: ``GET /api/v1/artist/{artist_id}``
         """
-        # TODO: GET /api/v1/artist/{artist_id}
-        # TODO: Return parsed JSON
-        raise NotImplementedError
+        try:
+            response = await self._http.get(f"/api/v1/artist/{artist_id}")
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            from app.common.exceptions import ExternalAPIError
+            raise ExternalAPIError(f"Lidarr API error: {str(e)}") from e
 
     async def add_artist(self, data: dict) -> dict:
         """Add an artist to the Lidarr library.
 
         Endpoint: ``POST /api/v1/artist``
         """
-        # TODO: POST /api/v1/artist with JSON body
-        # TODO: Return parsed JSON response
-        raise NotImplementedError
+        try:
+            response = await self._http.post("/api/v1/artist", json=data)
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            from app.common.exceptions import ExternalAPIError
+            raise ExternalAPIError(f"Lidarr API error: {str(e)}") from e
 
     async def search_artist(self, term: str) -> list[dict]:
         """Search for an artist in the Lidarr lookup.
 
         Endpoint: ``GET /api/v1/artist/lookup?term={term}``
         """
-        # TODO: GET /api/v1/artist/lookup with term param
-        # TODO: Return parsed JSON list
-        raise NotImplementedError
+        try:
+            response = await self._http.get("/api/v1/artist/lookup", params={"term": term})
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            from app.common.exceptions import ExternalAPIError
+            raise ExternalAPIError(f"Lidarr API error: {str(e)}") from e
 
     async def get_quality_profiles(self) -> list[dict]:
         """List available quality profiles.
 
         Endpoint: ``GET /api/v1/qualityprofile``
         """
-        # TODO: GET /api/v1/qualityprofile
-        # TODO: Return parsed JSON list
-        raise NotImplementedError
+        try:
+            response = await self._http.get("/api/v1/qualityprofile")
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            from app.common.exceptions import ExternalAPIError
+            raise ExternalAPIError(f"Lidarr API error: {str(e)}") from e
 
     async def get_root_folders(self) -> list[dict]:
         """List configured root folders.
 
         Endpoint: ``GET /api/v1/rootfolder``
         """
-        # TODO: GET /api/v1/rootfolder
-        # TODO: Return parsed JSON list
-        raise NotImplementedError
+        try:
+            response = await self._http.get("/api/v1/rootfolder")
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            from app.common.exceptions import ExternalAPIError
+            raise ExternalAPIError(f"Lidarr API error: {str(e)}") from e
 
     # ------------------------------------------------------------------
     # Lifecycle

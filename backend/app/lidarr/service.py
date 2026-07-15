@@ -18,9 +18,18 @@ class LidarrService:
         Returns:
             A list of :class:`LidarrArtist` objects.
         """
-        # TODO: Fetch artists via client.get_artists()
-        # TODO: Map each dict to LidarrArtist
-        raise NotImplementedError
+        artists_data = await self.client.get_artists()
+        artists = []
+        for a in artists_data:
+            artists.append(LidarrArtist(
+                id=a.get("id", 0),
+                name=a.get("artistName", ""),
+                foreign_artist_id=a.get("foreignArtistId", ""),
+                monitored=a.get("monitored", True),
+                quality_profile_id=a.get("qualityProfileId", 0),
+                path=a.get("path", "")
+            ))
+        return artists
 
     async def get_library_artist_names(self) -> set[str]:
         """Return a set of artist names in the library.
@@ -30,8 +39,8 @@ class LidarrService:
         Returns:
             A set of lowercased artist name strings.
         """
-        # TODO: Fetch library, extract and normalize names
-        raise NotImplementedError
+        artists = await self.get_library()
+        return {a.name.lower() for a in artists}
 
     async def add_artist_to_library(
         self, request: AddArtistRequest
@@ -44,10 +53,25 @@ class LidarrService:
         Returns:
             The newly created :class:`LidarrArtist`.
         """
-        # TODO: Serialize request to dict
-        # TODO: Call client.add_artist(data)
-        # TODO: Map response to LidarrArtist
-        raise NotImplementedError
+        data = {
+            "artistName": request.name,
+            "foreignArtistId": request.foreign_artist_id,
+            "qualityProfileId": request.quality_profile_id,
+            "rootFolderPath": request.root_folder_path,
+            "monitored": request.monitored,
+            "addOptions": {
+                "searchForMissingAlbums": request.monitored
+            }
+        }
+        res = await self.client.add_artist(data)
+        return LidarrArtist(
+            id=res.get("id", 0),
+            name=res.get("artistName", ""),
+            foreign_artist_id=res.get("foreignArtistId", ""),
+            monitored=res.get("monitored", True),
+            quality_profile_id=res.get("qualityProfileId", 0),
+            path=res.get("path", "")
+        )
 
     async def search_and_add(
         self,
@@ -65,8 +89,18 @@ class LidarrService:
         Returns:
             The newly added :class:`LidarrArtist`.
         """
-        # TODO: Search via client.search_artist(artist_name)
-        # TODO: Pick best match from results
-        # TODO: Build AddArtistRequest from match data
-        # TODO: Call self.add_artist_to_library(request)
-        raise NotImplementedError
+        results = await self.client.search_artist(artist_name)
+        if not results:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="Artist not found in Lidarr lookup")
+            
+        best_match = next((r for r in results if r.get("artistName", "").lower() == artist_name.lower()), results[0])
+        
+        request = AddArtistRequest(
+            name=best_match.get("artistName", ""),
+            foreign_artist_id=best_match.get("foreignArtistId", ""),
+            quality_profile_id=quality_profile_id,
+            root_folder_path=root_folder,
+            monitored=True
+        )
+        return await self.add_artist_to_library(request)
