@@ -30,8 +30,8 @@
 		try {
 			const res = await apiClient.lastfm.getProfile();
 			profileStore.set(res);
-		} catch (err: any) {
-			profileError = err.message || 'Failed to load Last.fm profile.';
+		} catch (err: unknown) {
+			profileError = err instanceof Error ? err.message : 'Failed to load Last.fm profile.';
 		} finally {
 			profileLoading = false;
 		}
@@ -43,8 +43,8 @@
 		try {
 			const res = await apiClient.lastfm.refresh();
 			profileStore.set(res);
-		} catch (err: any) {
-			profileError = err.message || 'Failed to refresh profile.';
+		} catch (err: unknown) {
+			profileError = err instanceof Error ? err.message : 'Failed to refresh profile.';
 		} finally {
 			profileLoading = false;
 		}
@@ -56,8 +56,8 @@
 		try {
 			const res = await apiClient.discovery.generate(8);
 			discoveryStore.set(res);
-		} catch (err: any) {
-			discoveryError = err.message || 'Failed to generate recommendations.';
+		} catch (err: unknown) {
+			discoveryError = err instanceof Error ? err.message : 'Failed to generate recommendations.';
 		} finally {
 			discoveryLoading = false;
 		}

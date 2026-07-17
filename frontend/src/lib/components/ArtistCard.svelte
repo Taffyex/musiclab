@@ -59,13 +59,13 @@
 
 <style>
 	.artist-card {
-		background: var(--bg-surface, #1e1e2e);
+		background: var(--card-bg, #1e1e2e);
 		border-radius: var(--radius-md, 8px);
 		overflow: hidden;
 		transition: transform 0.2s, box-shadow 0.2s;
 		text-decoration: none;
 		color: inherit;
-		border: 1px solid var(--border-color, #333);
+		border: 1px solid var(--border, #333);
 		display: flex;
 		flex-direction: column;
 		height: 100%;

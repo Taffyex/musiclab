@@ -79,15 +79,9 @@
 		loadArtists();
 	}
 	
-	function loadMore() {
-		filters.page += 1;
-		// Normally we'd append, but for simplicity here we just re-fetch page 1..N 
-		// Actually let's just fetch the next page and append
-		loadNextPage();
-	}
-	
-	async function loadNextPage() {
+	async function loadMore() {
 		if (!selectedType || !selectedSlug) return;
+		filters.page += 1;
 		
 		try {
 			let res;

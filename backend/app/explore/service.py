@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, timezone
 import aiosqlite
 
 from app.common.exceptions import NotFoundError, ExternalAPIError
+from app.common.utils import slugify
 from app.discogs.client import DiscogsClient
 from app.explore.schemas import (
     ArtistDetail, ArtistSummary, Credit, CreditEntity, ExploreFilters,
@@ -35,10 +36,6 @@ class ExploreService:
         self._discogs = discogs
         self._lastfm = lastfm
         self._musicbrainz = musicbrainz
-
-    def _slugify(self, text: str) -> str:
-        """Convert a string to a URL-friendly slug."""
-        return text.lower().replace(' ', '-').replace('/', '-').replace(',', '').replace('&', 'and')
 
     async def get_genre_tree(self) -> list[GenreTree]:
         """Return all genres with their nested styles."""
@@ -147,7 +144,7 @@ class ExploreService:
 
     async def enrich_and_cache_artist(self, artist_name: str) -> ArtistDetail:
         """Enrich artist from APIs and cache."""
-        slug = self._slugify(artist_name)
+        slug = slugify(artist_name)
         
         # Parallel fetch
         lf_task = asyncio.create_task(self._lastfm.get_artist_info(artist_name))
@@ -277,7 +274,7 @@ class ExploreService:
                 if images:
                     s_img = images[-1].get("#text", "")
                 res.append(ArtistSummary(
-                    id=0, name=s_name, slug=self._slugify(s_name), image_url=s_img,
+                    id=0, name=s_name, slug=slugify(s_name), image_url=s_img,
                     lastfm_listeners=int(s.get("match", 0) * 1000) # mock
                 ))
             return res

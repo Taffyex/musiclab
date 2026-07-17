@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import re
 import unicodedata
 from collections.abc import Awaitable, Callable
-from typing import TypeVar
+from typing import Any, TypeVar
 
 T = TypeVar("T")
 
@@ -81,3 +82,27 @@ async def retry_async(
     # Should never be None at this point, but satisfy the type checker.
     assert last_exc is not None  # noqa: S101
     raise last_exc
+
+
+def parse_llm_json(content: str) -> list[dict[str, Any]]:
+    """Parse JSON from an LLM response, stripping markdown fences if present.
+
+    Args:
+        content: Raw LLM response text, possibly wrapped in ```json fences.
+
+    Returns:
+        Parsed list of dicts, or an empty list on failure.
+    """
+    content = content.strip()
+    if content.startswith("```json"):
+        content = content[7:]
+    elif content.startswith("```"):
+        content = content[3:]
+    if content.endswith("```"):
+        content = content[:-3]
+    content = content.strip()
+    try:
+        parsed = json.loads(content)
+        return parsed if isinstance(parsed, list) else []
+    except (json.JSONDecodeError, ValueError):
+        return []

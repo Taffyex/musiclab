@@ -81,10 +81,10 @@
 
 <style>
 	.genre-tree {
-		background: var(--bg-surface, #1e1e2e);
+		background: var(--card-bg, #1e1e2e);
 		border-radius: var(--radius-md, 8px);
 		padding: 1rem;
-		border: 1px solid var(--border-color, #333);
+		border: 1px solid var(--border, #333);
 	}
 	
 	.genre-list, .style-list {

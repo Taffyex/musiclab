@@ -5,6 +5,21 @@ from app.main import app
 from app.config import settings
 from app.database import init_db
 from app.auth import service
+from app.settings.router import mask_key, is_masked
+
+def test_mask_key_unit():
+    assert mask_key(None) == ""
+    assert mask_key("") == ""
+    assert mask_key("short") == "********"
+    assert mask_key("abcdefghij") == "abcd****ghij"
+    assert mask_key("123456789012345") == "1234****2345"
+
+def test_is_masked_unit():
+    assert is_masked("abcd****ghij") is True
+    assert is_masked("1234****2345") is True
+    assert is_masked("abcdefghij") is False
+    assert is_masked("short") is False
+    assert is_masked("") is False
 
 @pytest.fixture(autouse=True)
 async def setup_db():

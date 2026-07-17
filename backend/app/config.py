@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     lidarr_api_key: str = ""
 
     # LLM Settings
-    llm_provider: str = "anthropic"  # anthropic, openai, ollama, deepseek
+    llm_provider: str = "openai"  # openai, deepseek
     anthropic_api_key: str = ""
     openai_api_key: str = ""
     deepseek_api_key: str = ""

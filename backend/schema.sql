@@ -16,13 +16,6 @@ CREATE TABLE IF NOT EXISTS sessions (
     expires_at TIMESTAMP NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS lastfm_profiles (
-    id         INTEGER   PRIMARY KEY AUTOINCREMENT,
-    user_id    INTEGER   NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    data       JSON      NOT NULL,
-    fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 CREATE TABLE IF NOT EXISTS discovery_batches (
     id          INTEGER   PRIMARY KEY AUTOINCREMENT,
     user_id     INTEGER   NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -42,13 +35,6 @@ CREATE TABLE IF NOT EXISTS cache_entries (
     key        TEXT      PRIMARY KEY,
     value      JSON      NOT NULL,
     expires_at TIMESTAMP NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS chat_sessions (
-    id         INTEGER   PRIMARY KEY AUTOINCREMENT,
-    user_id    INTEGER   NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    messages   JSON      NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Genre/Style taxonomy (Discogs backbone + Last.fm supplemental tags)

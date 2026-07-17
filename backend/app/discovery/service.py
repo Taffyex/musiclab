@@ -8,6 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from app.cache.service import CacheService
+from app.common.utils import parse_llm_json
 from app.discogs.service import DiscogsService
 from app.discovery.schemas import DiscoveryBatch, DiscoveryCard
 from app.lastfm.service import LastfmService
@@ -124,22 +125,10 @@ class DiscoveryService:
         
         llm_response = await self.llm.generate(system_prompt, user_prompt)
         
-        # Parse output - assuming the LLM returns a JSON array of DiscoveryRecommendation objects
-        try:
-            content = llm_response.content.strip()
-            if content.startswith("```json"):
-                content = content[7:]
-            elif content.startswith("```"):
-                content = content[3:]
-            if content.endswith("```"):
-                content = content[:-3]
-            content = content.strip()
-            raw_recs = json.loads(content)
-            if not isinstance(raw_recs, list):
-                raw_recs = []
-        except Exception:
-            logger.exception("Failed to parse LLM response")
-            raw_recs = []
+        # 3.5 Parse LLM output
+        raw_recs = parse_llm_json(llm_response.content)
+        if not raw_recs:
+            logger.warning("LLM returned no parseable recommendations")
             
         # 4. Enrich each artist
         cards = []
@@ -192,7 +181,6 @@ class DiscoveryService:
             A list of enriched :class:`DiscoveryCard` objects.
         """
         from app.llm.prompts import build_system_prompt
-        import json
         from uuid import uuid4
         
         system_prompt = build_system_prompt(mode="explore")
@@ -200,21 +188,7 @@ class DiscoveryService:
         
         llm_response = await self.llm.generate(system_prompt, user_prompt)
         
-        try:
-            content = llm_response.content.strip()
-            if content.startswith("```json"):
-                content = content[7:]
-            elif content.startswith("```"):
-                content = content[3:]
-            if content.endswith("```"):
-                content = content[:-3]
-            content = content.strip()
-            raw_recs = json.loads(content)
-            if not isinstance(raw_recs, list):
-                raw_recs = []
-        except Exception:
-            logger.exception("Failed to parse LLM response")
-            raw_recs = []
+        raw_recs = parse_llm_json(llm_response.content)
             
         cards = []
         for raw_rec in raw_recs:

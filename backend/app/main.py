@@ -6,22 +6,27 @@ health check endpoint, and static file serving for the SvelteKit frontend.
 """
 
 from __future__ import annotations
+
+import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
-from app.database import init_db
 from app.auth.router import router as auth_router
+from app.common.middleware import register_error_handlers, rate_limit_middleware
+from app.config import settings
+from app.database import DB_PATH, init_db
+from app.discovery.router import router as discovery_router
+from app.explore.router import router as explore_router
+from app.explore.seed_service import SeedService
 from app.lastfm.router import router as lastfm_router
 from app.lidarr.router import router as lidarr_router
-from app.discovery.router import router as discovery_router
 from app.llm.router import router as llm_router
 from app.settings.router import router as settings_router
-from app.explore.router import router as explore_router
-from app.common.middleware import register_error_handlers
 
 
 # ──────────────────────────────────────────────
@@ -34,8 +39,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await init_db()
     
     import aiosqlite
-    from app.database import DB_PATH
-    from app.explore.seed_service import SeedService
     async with aiosqlite.connect(DB_PATH) as db:
         seed_service = SeedService(db)
         await seed_service.seed_if_needed()
@@ -56,8 +59,6 @@ app = FastAPI(
 
 register_error_handlers(app)
 
-from app.config import settings
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[origin.strip() for origin in settings.cors_origins.split(",")],
@@ -65,9 +66,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-from app.common.middleware import register_error_handlers, rate_limit_middleware
 
 app.middleware("http")(rate_limit_middleware)
 
@@ -98,21 +96,15 @@ async def health_check() -> dict:
 # Static file serving (SvelteKit build)
 # ──────────────────────────────────────────────
 
-try:
-    from fastapi.staticfiles import StaticFiles
-    import os
-    from fastapi.responses import FileResponse
-
-    app.mount("/", StaticFiles(directory="static", html=True), name="static")
+_STATIC_DIR = "static"
+if os.path.isdir(_STATIC_DIR):
+    app.mount("/", StaticFiles(directory=_STATIC_DIR, html=True), name="static")
 
     @app.exception_handler(404)
     async def custom_404_handler(request, exc):
         if request.url.path.startswith("/api/"):
             return JSONResponse({"detail": exc.detail if hasattr(exc, "detail") else "Not Found"}, status_code=404)
-        index_file = "static/index.html"
+        index_file = os.path.join(_STATIC_DIR, "index.html")
         if os.path.isfile(index_file):
             return FileResponse(index_file)
         return JSONResponse({"detail": "Not Found"}, status_code=404)
-except Exception:
-    # Static directory won't exist during local backend-only development
-    pass

@@ -3,13 +3,13 @@
 	import ArtistCard from '$lib/components/ArtistCard.svelte';
 </script>
 
-<div class="favorites-page max-w-6xl mx-auto p-lg">
-	<h1 class="text-3xl font-bold mb-lg">Your Favorites</h1>
+<div class="favorites-page p-lg">
+	<h1 class="text-2xl font-bold mb-lg">Your Favorites</h1>
 
 	<section class="mb-xl">
 		<h2 class="text-2xl font-bold mb-md text-secondary">Artists</h2>
 		{#if $favoritesStore.artists.length > 0}
-			<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-md">
+			<div class="favorites-grid gap-md">
 				{#each $favoritesStore.artists as artist (artist.entity_id)}
 					<ArtistCard
 						artist={{
@@ -31,7 +31,7 @@
 		{/if}
 	</section>
 
-	<div class="grid grid-cols-1 md:grid-cols-2 gap-xl">
+	<div class="genre-style-grid gap-xl">
 		<section>
 			<h2 class="text-2xl font-bold mb-md text-secondary">Genres</h2>
 			{#if $favoritesStore.genres.length > 0}
@@ -65,6 +65,18 @@
 </div>
 
 <style>
+	.favorites-page {
+		max-width: 1152px;
+		margin: 0 auto;
+	}
+	.favorites-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	}
+	.genre-style-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	}
 	.tag {
 		text-decoration: none;
 		border-radius: var(--radius-full, 9999px);

@@ -30,8 +30,8 @@ def get_llm_provider(current_user: dict = Depends(get_current_user)) -> LLMProvi
         from app.llm.providers.anthropic import AnthropicProvider
         return AnthropicProvider(api_key=settings.anthropic_api_key)
     else:
-        from app.llm.providers.ollama import OllamaProvider
-        return OllamaProvider(base_url=settings.ollama_base_url, model=settings.ollama_model)
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail=f"Unsupported or unimplemented LLM provider: {provider}")
 
 def get_memory_service(
     db: aiosqlite.Connection = Depends(get_db),

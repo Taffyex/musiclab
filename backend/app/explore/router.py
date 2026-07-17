@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import aiosqlite
 from fastapi import APIRouter, Depends, Query
+from typing import Any
 
 from app.auth.dependencies import get_current_user
 from app.config import settings
@@ -46,7 +47,7 @@ async def list_genre_artists(
     per_page: int = Query(20, ge=1, le=50),
     current_user: dict = Depends(get_current_user),
     service: ExploreService = Depends(get_explore_service),
-) -> dict[str, any]:
+) -> dict[str, Any]:
     """List artists in a genre."""
     filters = ExploreFilters(
         genre=slug, decade=decade, sort_by=sort_by,
@@ -66,7 +67,7 @@ async def list_style_artists(
     per_page: int = Query(20, ge=1, le=50),
     current_user: dict = Depends(get_current_user),
     service: ExploreService = Depends(get_explore_service),
-) -> dict[str, any]:
+) -> dict[str, Any]:
     """List artists in a style."""
     filters = ExploreFilters(
         style=slug, decade=decade, sort_by=sort_by,

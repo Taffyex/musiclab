@@ -44,8 +44,8 @@
 				$userStore.lastfm_username = settings.lastfm_username;
 				$userStore.llm_provider = settings.llm_provider;
 			}
-		} catch (e: any) {
-			error = e.message || 'Failed to save';
+		} catch (e: unknown) {
+			error = e instanceof Error ? e.message : 'Failed to save';
 		} finally {
 			saving = false;
 		}

@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 
 import aiosqlite
 
+from app.common.utils import slugify
 from app.lastfm.client import LastfmClient
 
 logger = logging.getLogger(__name__)
@@ -42,10 +43,6 @@ class SeedService:
                 return True
         return False
 
-    def _slugify(self, text: str) -> str:
-        """Convert a string to a URL-friendly slug."""
-        return text.lower().replace(' ', '-').replace('/', '-').replace(',', '').replace('&', 'and')
-
     async def seed_genres(self) -> None:
         """Insert or update genres and styles from genre_seed.json."""
         seed_path = os.path.join(os.path.dirname(__file__), "genre_seed.json")
@@ -58,7 +55,7 @@ class SeedService:
 
         for genre_data in data.get("genres", []):
             name = genre_data.get("name")
-            slug = self._slugify(name)
+            slug = slugify(name)
             
             # Insert genre
             try:
@@ -84,7 +81,7 @@ class SeedService:
 
             # Insert styles
             for style_name in genre_data.get("styles", []):
-                style_slug = self._slugify(style_name)
+                style_slug = slugify(style_name)
                 try:
                     await self._db.execute(
                         """
@@ -108,7 +105,7 @@ class SeedService:
                 if not tag_name:
                     continue
                 
-                slug = self._slugify(tag_name)
+                slug = slugify(tag_name)
                 
                 # Check if it already exists as genre or style
                 async with self._db.execute("SELECT id FROM genres WHERE name = ?", (tag_name,)) as cursor:
