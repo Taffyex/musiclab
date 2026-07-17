@@ -11,7 +11,7 @@ from app.database import get_db
 from app.discogs.client import DiscogsClient
 from app.explore.schemas import (
     ArtistDetail, ArtistSummary, Credit, CreditEntity, ExploreFilters,
-    GenreTree, ReleaseDetail
+    GenreTree, ReleaseDetail, FavoriteRequest, UserFavorites
 )
 from app.explore.service import ExploreService
 from app.lastfm.client import LastfmClient
@@ -135,3 +135,35 @@ async def search_artists(
     """Search artists by name."""
     # Stub implementation
     return []
+
+
+@router.get("/favorites")
+async def get_favorites(
+    current_user: dict = Depends(get_current_user),
+    service: ExploreService = Depends(get_explore_service),
+) -> UserFavorites:
+    """Get all user favorites grouped by type."""
+    return await service.get_user_favorites(current_user["id"])
+
+
+@router.post("/favorites")
+async def add_favorite(
+    request: FavoriteRequest,
+    current_user: dict = Depends(get_current_user),
+    service: ExploreService = Depends(get_explore_service),
+) -> dict[str, str]:
+    """Add a favorite."""
+    await service.add_favorite(current_user["id"], request.entity_type, request.entity_id)
+    return {"status": "success"}
+
+
+@router.delete("/favorites/{entity_type}/{entity_id}")
+async def remove_favorite(
+    entity_type: str,
+    entity_id: int,
+    current_user: dict = Depends(get_current_user),
+    service: ExploreService = Depends(get_explore_service),
+) -> dict[str, str]:
+    """Remove a favorite."""
+    await service.remove_favorite(current_user["id"], entity_type, entity_id)
+    return {"status": "success"}

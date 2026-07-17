@@ -80,8 +80,46 @@ class DiscoveryService:
         # 2. Get library artist names
         library_names = await self.lidarr.get_library_artist_names()
         
+        # 2.5. Fetch explicit favorites
+        favorite_artists: list[str] = []
+        favorite_genres: list[str] = []
+        favorite_styles: list[str] = []
+
+        async with self.db.execute(
+            """SELECT a.name FROM favorites f
+               JOIN artists a ON f.entity_id = a.id
+               WHERE f.user_id = ? AND f.entity_type = 'artist'
+               ORDER BY f.created_at DESC LIMIT 30""", (user_id,)
+        ) as cursor:
+            async for row in cursor:
+                favorite_artists.append(row[0])
+
+        async with self.db.execute(
+            """SELECT g.name FROM favorites f
+               JOIN genres g ON f.entity_id = g.id
+               WHERE f.user_id = ? AND f.entity_type = 'genre'
+               ORDER BY f.created_at DESC""", (user_id,)
+        ) as cursor:
+            async for row in cursor:
+                favorite_genres.append(row[0])
+
+        async with self.db.execute(
+            """SELECT s.name FROM favorites f
+               JOIN styles s ON f.entity_id = s.id
+               WHERE f.user_id = ? AND f.entity_type = 'style'
+               ORDER BY f.created_at DESC""", (user_id,)
+        ) as cursor:
+            async for row in cursor:
+                favorite_styles.append(row[0])
+
+        favorites = {
+            "favorite_artists": ", ".join(favorite_artists) or "None",
+            "favorite_genres": ", ".join(favorite_genres) or "None",
+            "favorite_styles": ", ".join(favorite_styles) or "None",
+        }
+        
         # 3. Build prompt and ask LLM
-        system_prompt = build_system_prompt(profile=profile, memory=memory, library=library_names, mode="discovery")
+        system_prompt = build_system_prompt(profile=profile, memory=memory, library=library_names, favorites=favorites, mode="discovery")
         user_prompt = f"Please generate {count} artist recommendations."
         
         llm_response = await self.llm.generate(system_prompt, user_prompt)

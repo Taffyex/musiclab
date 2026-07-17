@@ -209,6 +209,23 @@ export const apiClient = {
 		search: async (q: string) => {
 			const res = await fetchBase(`/explore/search?q=${encodeURIComponent(q)}`);
 			return res.json();
+		},
+		getFavorites: async () => {
+			const res = await fetchBase('/explore/favorites');
+			return res.json();
+		},
+		addFavorite: async (entity_type: string, entity_id: number) => {
+			const res = await fetchBase('/explore/favorites', {
+				method: 'POST',
+				body: JSON.stringify({ entity_type, entity_id })
+			});
+			return res.json();
+		},
+		removeFavorite: async (entity_type: string, entity_id: number) => {
+			const res = await fetchBase(`/explore/favorites/${entity_type}/${entity_id}`, {
+				method: 'DELETE'
+			});
+			return res.json();
 		}
 	},
 	settings: {

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { ArtistSummary } from '$lib/types';
+	import FavoriteToggle from './FavoriteToggle.svelte';
 	
 	interface Props {
 		artist: ArtistSummary;
@@ -24,9 +25,18 @@
 				<span class="text-xl font-bold">{artist.name.charAt(0)}</span>
 			</div>
 		{/if}
-		{#if artist.already_in_lidarr}
-			<div class="lidarr-badge" title="Already in Lidarr">✓</div>
-		{/if}
+		<div class="card-actions">
+			<FavoriteToggle 
+				entity_type="artist"
+				entity_id={artist.id}
+				name={artist.name}
+				slug={artist.slug}
+				image_url={artist.image_url}
+			/>
+			{#if artist.already_in_lidarr}
+				<div class="lidarr-badge" title="Already in Lidarr">✓</div>
+			{/if}
+		</div>
 	</div>
 	
 	<div class="content">
@@ -88,9 +98,6 @@
 	}
 	
 	.lidarr-badge {
-		position: absolute;
-		top: 8px;
-		right: 8px;
 		background: var(--success, #2ecc71);
 		color: white;
 		width: 24px;
@@ -102,6 +109,16 @@
 		font-size: 12px;
 		font-weight: bold;
 		box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+	}
+	
+	.card-actions {
+		position: absolute;
+		top: 8px;
+		right: 8px;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		align-items: center;
 	}
 	
 	.content {

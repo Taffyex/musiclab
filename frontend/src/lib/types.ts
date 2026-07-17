@@ -186,3 +186,17 @@ export interface ExploreFilters {
 	sort_order: 'asc' | 'desc';
 	page: number; per_page: number;
 }
+
+export interface FavoriteItem {
+	entity_type: 'artist' | 'genre' | 'style';
+	entity_id: number;
+	name: string;
+	slug: string;
+	image_url?: string;
+}
+
+export interface UserFavorites {
+	artists: FavoriteItem[];
+	genres: FavoriteItem[];
+	styles: FavoriteItem[];
+}

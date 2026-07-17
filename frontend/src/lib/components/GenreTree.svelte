@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { GenreTree } from '$lib/types';
+	import FavoriteToggle from './FavoriteToggle.svelte';
 	
 	interface Props {
 		trees: GenreTree[];
@@ -35,6 +36,12 @@
 						<span class="spacer"></span>
 					{/if}
 					
+					<FavoriteToggle 
+						entity_type="genre"
+						entity_id={tree.genre.id}
+						name={tree.genre.name}
+						slug={tree.genre.slug}
+					/>
 					<button 
 						class="genre-btn"
 						class:selected={selectedType === 'genre' && selectedSlug === tree.genre.slug}
@@ -48,13 +55,21 @@
 					<ul class="style-list mt-xs">
 						{#each tree.styles as style (style.id)}
 							<li>
-								<button 
-									class="style-btn"
-									class:selected={selectedType === 'style' && selectedSlug === style.slug}
-									onclick={() => onSelect('style', style.slug)}
-								>
-									{style.name}
-								</button>
+								<div class="flex items-center gap-sm">
+									<FavoriteToggle 
+										entity_type="style"
+										entity_id={style.id}
+										name={style.name}
+										slug={style.slug}
+									/>
+									<button 
+										class="style-btn"
+										class:selected={selectedType === 'style' && selectedSlug === style.slug}
+										onclick={() => onSelect('style', style.slug)}
+									>
+										{style.name}
+									</button>
+								</div>
 							</li>
 						{/each}
 					</ul>

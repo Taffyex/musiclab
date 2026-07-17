@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { ArtistDetail } from '$lib/types';
 	import LidarrQuickAdd from './LidarrQuickAdd.svelte';
+	import FavoriteToggle from './FavoriteToggle.svelte';
 	
 	interface Props {
 		artist: ArtistDetail;
@@ -56,7 +57,14 @@
 			<strong>{formatNumber(artist.lastfm_playcount)}</strong> Scrobbles
 		</div>
 		
-		<div class="actions mt-sm">
+		<div class="actions mt-sm flex gap-sm items-center">
+			<FavoriteToggle 
+				entity_type="artist"
+				entity_id={artist.id}
+				name={artist.name}
+				slug={artist.slug}
+				image_url={artist.image_url}
+			/>
 			<LidarrQuickAdd 
 				artistName={artist.name} 
 				alreadyInLidarr={artist.already_in_lidarr} 

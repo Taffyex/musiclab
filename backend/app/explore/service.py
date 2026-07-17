@@ -13,7 +13,8 @@ from app.common.exceptions import NotFoundError, ExternalAPIError
 from app.discogs.client import DiscogsClient
 from app.explore.schemas import (
     ArtistDetail, ArtistSummary, Credit, CreditEntity, ExploreFilters,
-    Genre, GenreTree, ReleaseDetail, ReleaseWithArtist, Style
+    Genre, GenreTree, ReleaseDetail, ReleaseWithArtist, Style,
+    FavoriteItem, UserFavorites
 )
 from app.lastfm.client import LastfmClient
 from app.musicbrainz.client import MusicBrainzClient
@@ -296,3 +297,62 @@ class ExploreService:
     async def get_credit_entity(self, entity_slug: str) -> CreditEntity:
         """Get all releases for a producer/engineer/studio (stub)."""
         return CreditEntity(name=entity_slug, slug=entity_slug, entity_type="person")
+
+    async def get_user_favorites(self, user_id: int) -> UserFavorites:
+        """Fetch all favorites for a user, resolving entity names via JOINs."""
+        artists = []
+        async with self._db.execute(
+            """SELECT a.name, a.slug, a.image_url, f.entity_id
+               FROM favorites f JOIN artists a ON f.entity_id = a.id
+               WHERE f.user_id = ? AND f.entity_type = 'artist'
+               ORDER BY f.created_at DESC""", (user_id,)
+        ) as cursor:
+            async for row in cursor:
+                artists.append(FavoriteItem(
+                    entity_type="artist", entity_id=row[3],
+                    name=row[0], slug=row[1], image_url=row[2] or ""
+                ))
+
+        genres = []
+        async with self._db.execute(
+            """SELECT g.name, g.slug, f.entity_id
+               FROM favorites f JOIN genres g ON f.entity_id = g.id
+               WHERE f.user_id = ? AND f.entity_type = 'genre'
+               ORDER BY f.created_at DESC""", (user_id,)
+        ) as cursor:
+            async for row in cursor:
+                genres.append(FavoriteItem(
+                    entity_type="genre", entity_id=row[2],
+                    name=row[0], slug=row[1]
+                ))
+
+        styles = []
+        async with self._db.execute(
+            """SELECT s.name, s.slug, f.entity_id
+               FROM favorites f JOIN styles s ON f.entity_id = s.id
+               WHERE f.user_id = ? AND f.entity_type = 'style'
+               ORDER BY f.created_at DESC""", (user_id,)
+        ) as cursor:
+            async for row in cursor:
+                styles.append(FavoriteItem(
+                    entity_type="style", entity_id=row[2],
+                    name=row[0], slug=row[1]
+                ))
+
+        return UserFavorites(artists=artists, genres=genres, styles=styles)
+
+    async def add_favorite(self, user_id: int, entity_type: str, entity_id: int) -> None:
+        """Add a favorite. No-op if the pair already exists (UNIQUE constraint)."""
+        await self._db.execute(
+            "INSERT OR IGNORE INTO favorites (user_id, entity_type, entity_id) VALUES (?, ?, ?)",
+            (user_id, entity_type, entity_id)
+        )
+        await self._db.commit()
+
+    async def remove_favorite(self, user_id: int, entity_type: str, entity_id: int) -> None:
+        """Remove a favorite. Silent if it doesn't exist."""
+        await self._db.execute(
+            "DELETE FROM favorites WHERE user_id = ? AND entity_type = ? AND entity_id = ?",
+            (user_id, entity_type, entity_id)
+        )
+        await self._db.commit()

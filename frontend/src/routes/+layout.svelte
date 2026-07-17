@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { themeStore, userStore } from '$lib/stores';
+	import { themeStore, userStore, favoritesStore } from '$lib/stores';
 	import { apiClient } from '$lib/api';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import '../app.css';
@@ -14,6 +14,7 @@
 			const res = await apiClient.auth.me();
 			if (res.user) {
 				userStore.login(res.user);
+				apiClient.explore.getFavorites().then(data => favoritesStore.set(data));
 			}
 		} catch (e) {
 			// Not logged in or error

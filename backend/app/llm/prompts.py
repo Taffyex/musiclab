@@ -44,6 +44,14 @@ Disliked recommendations: {disliked_recommendations}
 Noted patterns: {noted_patterns}
 """
 
+FAVORITES_TEMPLATE: str = """\
+## User's Explicit Favorites
+The user has specifically marked these as their favorites. Weigh these heavily when generating recommendations:
+Favorite Artists: {favorite_artists}
+Favorite Genres: {favorite_genres}
+Favorite Styles: {favorite_styles}
+"""
+
 # ---------------------------------------------------------------------------
 # Mode-specific prompts
 # ---------------------------------------------------------------------------
@@ -85,6 +93,7 @@ def build_system_prompt(
     profile: LastfmProfile | None = None,
     memory: dict | None = None,
     library: set[str] | None = None,
+    favorites: dict | None = None,
     mode: str = "chat",
 ) -> str:
     """Assemble the full system prompt from components.
@@ -125,6 +134,13 @@ def build_system_prompt(
             noted_patterns=", ".join(memory.get("noted_patterns", [])) or "None"
         ))
         
+    if favorites:
+        parts.append(FAVORITES_TEMPLATE.format(
+            favorite_artists=favorites.get("favorite_artists", "None"),
+            favorite_genres=favorites.get("favorite_genres", "None"),
+            favorite_styles=favorites.get("favorite_styles", "None"),
+        ))
+
     if library:
         parts.append("## Artists already in library\n" + ", ".join(library) + "\n")
         
