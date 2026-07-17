@@ -61,86 +61,58 @@ class ExploreService:
             
         return list(genres.values())
 
-    async def get_artists_by_genre(self, genre_slug: str, filters: ExploreFilters) -> tuple[list[ArtistSummary], int]:
-        """Get artists by genre."""
-        # Find genre
-        async with self._db.execute("SELECT id FROM genres WHERE slug = ?", (genre_slug,)) as cursor:
+    async def _get_artists_by_taxonomy(
+        self, slug: str, filters: ExploreFilters, *, is_style: bool = False
+    ) -> tuple[list[ArtistSummary], int]:
+        """Shared implementation for get_artists_by_genre and get_artists_by_style."""
+        table = "styles" if is_style else "genres"
+        join_table = "artist_styles" if is_style else "artist_genres"
+        join_col = "style_id" if is_style else "genre_id"
+        label = "Style" if is_style else "Genre"
+
+        async with self._db.execute(f"SELECT id FROM {table} WHERE slug = ?", (slug,)) as cursor:
             row = await cursor.fetchone()
             if not row:
-                raise NotFoundError(f"Genre {genre_slug} not found")
-            genre_id = row[0]
-            
-        # Simplified query for cached artists
-        query = """
-            SELECT a.id, a.name, a.slug, a.image_url, a.lastfm_listeners, a.lastfm_playcount, a.genres, a.styles
-            FROM artists a
-            JOIN artist_genres ag ON a.id = ag.artist_id
-            WHERE ag.genre_id = ?
-        """
+                raise NotFoundError(f"{label} {slug} not found")
+            taxonomy_id = row[0]
+
         column = {"listeners": "a.lastfm_listeners", "scrobbles": "a.lastfm_playcount", "name": "a.name"}.get(filters.sort_by, "a.lastfm_listeners")
         direction = "ASC" if filters.sort_order == "asc" else "DESC"
-        order_by = f"{column} {direction}"
-            
+
+        query = f"""
+            SELECT a.id, a.name, a.slug, a.image_url, a.lastfm_listeners, a.lastfm_playcount, a.genres, a.styles
+            FROM artists a
+            JOIN {join_table} j ON a.id = j.artist_id
+            WHERE j.{join_col} = ?
+            ORDER BY {column} {direction}
+            LIMIT ? OFFSET ?
+        """
         offset = (filters.page - 1) * filters.per_page
-        query += f" ORDER BY {order_by} LIMIT ? OFFSET ?"
-        
+
         artists = []
-        async with self._db.execute(query, (genre_id, filters.per_page, offset)) as cursor:
+        async with self._db.execute(query, (taxonomy_id, filters.per_page, offset)) as cursor:
             async for row in cursor:
-                a_id, name, slug, image_url, listeners, playcount, g_json, s_json = row
+                a_id, name, art_slug, image_url, listeners, playcount, g_json, s_json = row
                 artists.append(ArtistSummary(
-                    id=a_id, name=name, slug=slug, image_url=image_url,
+                    id=a_id, name=name, slug=art_slug, image_url=image_url,
                     lastfm_listeners=listeners, lastfm_playcount=playcount,
                     genres=json.loads(g_json) if g_json else [],
                     styles=json.loads(s_json) if s_json else [],
-                    already_in_lidarr=False # TODO: implement lidarr check
+                    already_in_lidarr=False,
                 ))
-                
-        # Count
-        count_query = "SELECT COUNT(*) FROM artist_genres WHERE genre_id = ?"
-        async with self._db.execute(count_query, (genre_id,)) as cursor:
+
+        async with self._db.execute(f"SELECT COUNT(*) FROM {join_table} WHERE {join_col} = ?", (taxonomy_id,)) as cursor:
             total = (await cursor.fetchone())[0]
-            
+
         return artists, total
+
+    async def get_artists_by_genre(self, genre_slug: str, filters: ExploreFilters) -> tuple[list[ArtistSummary], int]:
+        """Get artists by genre."""
+        return await self._get_artists_by_taxonomy(genre_slug, filters, is_style=False)
 
     async def get_artists_by_style(self, style_slug: str, filters: ExploreFilters) -> tuple[list[ArtistSummary], int]:
         """Get artists by style."""
-        async with self._db.execute("SELECT id FROM styles WHERE slug = ?", (style_slug,)) as cursor:
-            row = await cursor.fetchone()
-            if not row:
-                raise NotFoundError(f"Style {style_slug} not found")
-            style_id = row[0]
-            
-        query = """
-            SELECT a.id, a.name, a.slug, a.image_url, a.lastfm_listeners, a.lastfm_playcount, a.genres, a.styles
-            FROM artists a
-            JOIN artist_styles ast ON a.id = ast.artist_id
-            WHERE ast.style_id = ?
-        """
-        column = {"listeners": "a.lastfm_listeners", "scrobbles": "a.lastfm_playcount", "name": "a.name"}.get(filters.sort_by, "a.lastfm_listeners")
-        direction = "ASC" if filters.sort_order == "asc" else "DESC"
-        order_by = f"{column} {direction}"
-            
-        offset = (filters.page - 1) * filters.per_page
-        query += f" ORDER BY {order_by} LIMIT ? OFFSET ?"
-        
-        artists = []
-        async with self._db.execute(query, (style_id, filters.per_page, offset)) as cursor:
-            async for row in cursor:
-                a_id, name, slug, image_url, listeners, playcount, g_json, s_json = row
-                artists.append(ArtistSummary(
-                    id=a_id, name=name, slug=slug, image_url=image_url,
-                    lastfm_listeners=listeners, lastfm_playcount=playcount,
-                    genres=json.loads(g_json) if g_json else [],
-                    styles=json.loads(s_json) if s_json else [],
-                    already_in_lidarr=False
-                ))
-                
-        count_query = "SELECT COUNT(*) FROM artist_styles WHERE style_id = ?"
-        async with self._db.execute(count_query, (style_id,)) as cursor:
-            total = (await cursor.fetchone())[0]
-            
-        return artists, total
+        return await self._get_artists_by_taxonomy(style_slug, filters, is_style=True)
 
     async def enrich_and_cache_artist(self, artist_name: str) -> ArtistDetail:
         """Enrich artist from APIs and cache."""

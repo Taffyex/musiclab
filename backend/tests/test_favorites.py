@@ -1,22 +1,23 @@
 from __future__ import annotations
 import pytest
+import pytest_asyncio
 from httpx import AsyncClient
 from app.main import app
 from app.database import init_db
 from app.auth import service
 
-@pytest.fixture(autouse=True)
+@pytest_asyncio.fixture(autouse=True)
 async def setup_db():
     await init_db()
     
     import aiosqlite
     from app.database import DB_PATH
     async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute("DELETE FROM user_favorites")
+        await db.execute("DELETE FROM favorites")
         await db.execute("DELETE FROM users")
         await db.execute(
             "INSERT INTO users (id, username, password_hash, lastfm_username, llm_provider) VALUES (?, ?, ?, ?, ?)",
-            (1, "admin", service.get_password_hash("adminpass"), "admin_lastfm", "openai")
+            (1, "admin", service.hash_password("adminpass"), "admin_lastfm", "openai")
         )
         await db.commit()
     yield

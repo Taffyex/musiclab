@@ -5,13 +5,16 @@ Endpoints for login, logout, and retrieving the current user.
 """
 
 from __future__ import annotations
-from fastapi import APIRouter, Depends, Request, Response
-from fastapi.responses import JSONResponse
 
 import aiosqlite
 
-from app.database import get_db
+from fastapi import APIRouter, Depends, Request, Response
+from fastapi.responses import JSONResponse
+
+from app.auth import service
 from app.auth.dependencies import get_current_user
+from app.config import settings
+from app.database import get_db
 
 router = APIRouter()
 
@@ -28,8 +31,6 @@ async def login(
     Sets an HTTP-only session cookie on success.
     """
     from fastapi import HTTPException, status
-    from app.auth import service
-    from app.config import settings
 
     form = await request.form()
     username = form.get("username")
@@ -58,8 +59,6 @@ async def logout(
     """
     Invalidate the current session and clear the session cookie.
     """
-    from app.auth import service
-    
     token = request.cookies.get("session")
     if token:
         await service.invalidate_session(db, token)

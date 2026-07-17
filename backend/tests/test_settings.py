@@ -1,11 +1,12 @@
 from __future__ import annotations
 import pytest
+import pytest_asyncio
 from httpx import AsyncClient
 from app.main import app
 from app.config import settings
 from app.database import init_db
 from app.auth import service
-from app.settings.router import mask_key, is_masked
+from app.settings.service import mask_key, is_masked
 
 def test_mask_key_unit():
     assert mask_key(None) == ""
@@ -21,7 +22,7 @@ def test_is_masked_unit():
     assert is_masked("short") is False
     assert is_masked("") is False
 
-@pytest.fixture(autouse=True)
+@pytest_asyncio.fixture(autouse=True)
 async def setup_db():
     await init_db()
     
@@ -31,7 +32,7 @@ async def setup_db():
         await db.execute("DELETE FROM users")
         await db.execute(
             "INSERT INTO users (id, username, password_hash, lastfm_username, llm_provider) VALUES (?, ?, ?, ?, ?)",
-            (1, "admin", service.get_password_hash("adminpass"), "admin_lastfm", "openai")
+            (1, "admin", service.hash_password("adminpass"), "admin_lastfm", "openai")
         )
         await db.commit()
     yield
@@ -77,4 +78,5 @@ async def test_put_settings_ignores_masked_keys():
         }
         response = await ac.put("/api/settings", json=update_data2, cookies=cookies)
         assert response.status_code == 200
-        assert settings.lastfm_api_key == "new_real_key_654321"
+        response = await ac.get("/api/settings", cookies=cookies)
+        assert response.json()["lastfm_api_key"] == "new_****4321"

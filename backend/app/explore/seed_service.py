@@ -53,48 +53,47 @@ class SeedService:
             logger.exception("Failed to load genre_seed.json")
             return
 
+        now = datetime.now(timezone.utc).isoformat()
+
         for genre_data in data.get("genres", []):
             name = genre_data.get("name")
             slug = slugify(name)
-            
-            # Insert genre
+
             try:
                 await self._db.execute(
-                    """
-                    INSERT INTO genres (name, slug, source, created_at)
-                    VALUES (?, ?, 'discogs', ?)
-                    ON CONFLICT(name) DO UPDATE SET created_at=excluded.created_at
-                    """,
-                    (name, slug, datetime.now(timezone.utc).isoformat())
+                    "INSERT INTO genres (name, slug, source, created_at) "
+                    "VALUES (?, ?, 'discogs', ?) "
+                    "ON CONFLICT(name) DO UPDATE SET created_at=excluded.created_at",
+                    (name, slug, now),
                 )
-                await self._db.commit()
             except Exception:
                 logger.exception("Failed to insert genre: %s", name)
                 continue
 
-            # Get genre_id
+        await self._db.commit()
+
+        # Collect genre IDs and insert styles in a single transaction
+        for genre_data in data.get("genres", []):
+            name = genre_data.get("name")
             async with self._db.execute("SELECT id FROM genres WHERE name = ?", (name,)) as cursor:
                 row = await cursor.fetchone()
                 if not row:
                     continue
                 genre_id = row[0]
 
-            # Insert styles
             for style_name in genre_data.get("styles", []):
                 style_slug = slugify(style_name)
                 try:
                     await self._db.execute(
-                        """
-                        INSERT INTO styles (name, slug, genre_id, source, created_at)
-                        VALUES (?, ?, ?, 'discogs', ?)
-                        ON CONFLICT(name, genre_id) DO UPDATE SET created_at=excluded.created_at
-                        """,
-                        (style_name, style_slug, genre_id, datetime.now(timezone.utc).isoformat())
+                        "INSERT INTO styles (name, slug, genre_id, source, created_at) "
+                        "VALUES (?, ?, ?, 'discogs', ?) "
+                        "ON CONFLICT(name, genre_id) DO UPDATE SET created_at=excluded.created_at",
+                        (style_name, style_slug, genre_id, now),
                     )
                 except Exception:
                     logger.exception("Failed to insert style: %s for genre: %s", style_name, name)
-            
-            await self._db.commit()
+
+        await self._db.commit()
 
     async def supplement_with_lastfm_tags(self) -> None:
         """Fetch top tags from Last.fm and add missing ones as genres."""

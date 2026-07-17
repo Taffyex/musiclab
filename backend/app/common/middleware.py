@@ -92,10 +92,16 @@ async def rate_limit_middleware(request: Request, call_next):  # noqa: ANN001
         client_ip = request.client.host if request.client else "unknown"
         now = time.time()
         
-        # Clean up old timestamps
-        _rate_limit_store[client_ip] = [t for t in _rate_limit_store[client_ip] if now - t < RATE_LIMIT_WINDOW]
+        # Clean up old timestamps for this IP
+        timestamps = _rate_limit_store.get(client_ip, [])
+        timestamps = [t for t in timestamps if now - t < RATE_LIMIT_WINDOW]
         
-        if len(_rate_limit_store[client_ip]) >= RATE_LIMIT_MAX_REQUESTS:
+        if not timestamps:
+            _rate_limit_store.pop(client_ip, None)
+        else:
+            _rate_limit_store[client_ip] = timestamps
+        
+        if len(timestamps) >= RATE_LIMIT_MAX_REQUESTS:
             return JSONResponse(
                 status_code=429,
                 content={"detail": "Too many login attempts. Please try again later."},

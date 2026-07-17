@@ -3,6 +3,24 @@ name = "musiclab"
 version = "0.1.0"
 description = "AI-powered music discovery and library management"
 requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic-settings>=2.6.0",
+    "aiosqlite>=0.20.0",
+    "httpx>=0.27.0",
+    "bcrypt>=4.2.0",
+    "python-multipart>=0.0.12",
+    "python-dotenv>=1.0.0",
+    "openai>=1.55.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24.0",
+    "httpx>=0.27.0",
+]
 
 [build-system]
 requires = ["setuptools>=68.0"]

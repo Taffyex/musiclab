@@ -2,27 +2,27 @@
 
 from __future__ import annotations
 
+import aiosqlite
+
 from fastapi import APIRouter, Depends, Query
 
-from app.discovery.schemas import DiscoveryBatch, DiscoveryCard
-
-router = APIRouter()
-
 from app.auth.dependencies import get_current_user
-from app.database import get_db
+from app.cache.service import CacheService
 from app.config import settings
+from app.database import get_db
+from app.discogs.client import DiscogsClient
+from app.discogs.service import DiscogsService
+from app.discovery.schemas import DiscoveryBatch, DiscoveryCard
 from app.discovery.service import DiscoveryService
 from app.lastfm.client import LastfmClient
 from app.lastfm.service import LastfmService
-from app.discogs.client import DiscogsClient
-from app.discogs.service import DiscogsService
-from app.musicbrainz.client import MusicBrainzClient
-from app.musicbrainz.service import MusicBrainzService
 from app.lidarr.client import LidarrClient
 from app.lidarr.service import LidarrService
 from app.llm.router import get_llm_provider
-from app.cache.service import CacheService
-import aiosqlite
+from app.musicbrainz.client import MusicBrainzClient
+from app.musicbrainz.service import MusicBrainzService
+
+router = APIRouter()
 
 def get_discovery_service(
     db: aiosqlite.Connection = Depends(get_db),
