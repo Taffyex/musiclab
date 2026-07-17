@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query
 
-from app.discovery.schemas import DiscoveryBatch, DiscoveryCard, ExploreRequest
+from app.discovery.schemas import DiscoveryBatch, DiscoveryCard
 
 router = APIRouter()
 

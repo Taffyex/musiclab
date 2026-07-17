@@ -101,6 +101,26 @@ class MusicBrainzClient:
             raise ExternalAPIError(service="MusicBrainz", message=str(e)) from e
 
     # ------------------------------------------------------------------
+
+    async def get_artist_with_full_relations(self, mbid: str) -> dict:
+        """Fetch artist with full relationships (url-rels, tags, artist-rels)."""
+        return await self.get_artist(mbid, includes=["tags", "artist-rels", "url-rels"])
+
+    async def browse_artists_by_tag(self, tag: str, limit: int = 20, offset: int = 0) -> list[dict]:
+        """Browse artists by tag."""
+        try:
+            response = await self._http.get(
+                "/artist", 
+                params={"query": f"tag:{tag}", "fmt": "json", "limit": limit, "offset": offset}
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data.get("artists", [])
+        except httpx.HTTPError as e:
+            from app.common.exceptions import ExternalAPIError
+            raise ExternalAPIError(service="MusicBrainz", message=str(e)) from e
+
+    # ------------------------------------------------------------------
     # Lifecycle
     # ------------------------------------------------------------------
 

@@ -21,9 +21,10 @@ class OpenAIProvider(LLMProvider):
         self,
         api_key: str,
         model: str = "gpt-4o",
+        base_url: str | None = None,
     ) -> None:
         self.model = model
-        self._client = openai.AsyncOpenAI(api_key=api_key)
+        self._client = openai.AsyncOpenAI(api_key=api_key, base_url=base_url)
 
     async def generate(
         self,

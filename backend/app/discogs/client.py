@@ -71,6 +71,37 @@ class DiscogsClient:
             raise ExternalAPIError(service="Discogs", message=str(e)) from e
 
     # ------------------------------------------------------------------
+
+    async def get_release(self, release_id: int) -> dict:
+        """Fetch full release details including extraartists (credits).
+        
+        Endpoint: ``GET /releases/{release_id}``
+        """
+        try:
+            response = await self._http.get(f"/releases/{release_id}")
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            from app.common.exceptions import ExternalAPIError
+            raise ExternalAPIError(service="Discogs", message=str(e)) from e
+
+    async def search_by_style(self, style: str, page: int = 1, per_page: int = 20) -> dict:
+        """Search releases/artists by Discogs style.
+        
+        Endpoint: ``GET /database/search?style={style}&type=artist``
+        """
+        try:
+            response = await self._http.get(
+                "/database/search", 
+                params={"style": style, "type": "artist", "page": page, "per_page": per_page}
+            )
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            from app.common.exceptions import ExternalAPIError
+            raise ExternalAPIError(service="Discogs", message=str(e)) from e
+
+    # ------------------------------------------------------------------
     # Lifecycle
     # ------------------------------------------------------------------
 

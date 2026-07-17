@@ -35,14 +35,13 @@ class Settings(BaseSettings):
     lidarr_url: str = ""
     lidarr_api_key: str = ""
 
-    # ─── LLM Provider ───
-    llm_provider: str = "anthropic"  # anthropic | openai | ollama
-
+    # LLM Settings
+    llm_provider: str = "anthropic"  # anthropic, openai, ollama, deepseek
     anthropic_api_key: str = ""
     openai_api_key: str = ""
-
+    deepseek_api_key: str = ""
     ollama_base_url: str = "http://localhost:11434"
-    ollama_model: str = ""
+    ollama_model: str = "llama3"
 
     # ─── Discogs ───
     discogs_token: str = ""

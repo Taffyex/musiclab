@@ -140,6 +140,35 @@ class LastfmClient:
         return data.get("toptags", {}).get("tag", [])
 
     # ------------------------------------------------------------------
+
+    async def get_artist_info(self, artist: str) -> dict:
+        """Fetch artist info including listeners, playcount, bio, and tags.
+
+        Last.fm method: ``artist.getInfo``
+        """
+        params = {"artist": artist, "autocorrect": 1}
+        data = await self._request("artist.getInfo", params)
+        return data.get("artist", {})
+
+    async def get_tag_top_artists(self, tag: str, page: int = 1, limit: int = 50) -> list[dict]:
+        """Fetch top artists for a tag.
+
+        Last.fm method: ``tag.getTopArtists``
+        """
+        params = {"tag": tag, "page": page, "limit": limit}
+        data = await self._request("tag.getTopArtists", params)
+        return data.get("topartists", {}).get("artist", [])
+
+    async def get_global_top_tags(self, limit: int = 50) -> list[dict]:
+        """Fetch global top tags.
+
+        Last.fm method: ``tag.getTopTags``
+        """
+        params = {"limit": limit}
+        data = await self._request("tag.getTopTags", params)
+        return data.get("toptags", {}).get("tag", [])
+
+    # ------------------------------------------------------------------
     # Lifecycle
     # ------------------------------------------------------------------
 

@@ -18,7 +18,8 @@
 
 		const found = $discoveryStore.cards.find(c => c.id === id);
 		if (found) {
-			artist = found;
+			const slug = found.artist_name.toLowerCase().replace(/ /g, '-').replace(/\//g, '-').replace(/,/g, '').replace(/&/g, 'and');
+			goto(`/artist/${slug}`);
 		} else {
 			goto('/discover');
 		}

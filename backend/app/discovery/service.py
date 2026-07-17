@@ -88,7 +88,15 @@ class DiscoveryService:
         
         # Parse output - assuming the LLM returns a JSON array of DiscoveryRecommendation objects
         try:
-            raw_recs = json.loads(llm_response.content)
+            content = llm_response.content.strip()
+            if content.startswith("```json"):
+                content = content[7:]
+            elif content.startswith("```"):
+                content = content[3:]
+            if content.endswith("```"):
+                content = content[:-3]
+            content = content.strip()
+            raw_recs = json.loads(content)
             if not isinstance(raw_recs, list):
                 raw_recs = []
         except Exception:
@@ -124,10 +132,11 @@ class DiscoveryService:
             created_at=datetime.now(timezone.utc),
             cards=cards
         )
-        await self.db.execute(
-            "INSERT INTO discovery_batches (id, user_id, cards, created_at) VALUES (?, ?, ?, ?)",
-            (batch.id, user_id, json.dumps(batch.model_dump()), batch.created_at)
+        cursor = await self.db.execute(
+            "INSERT INTO discovery_batches (user_id, cards, created_at) VALUES (?, ?, ?)",
+            (user_id, batch.model_dump_json(), batch.created_at)
         )
+        batch.id = str(cursor.lastrowid)
         await self.db.commit()
         return batch
 
@@ -154,7 +163,15 @@ class DiscoveryService:
         llm_response = await self.llm.generate(system_prompt, user_prompt)
         
         try:
-            raw_recs = json.loads(llm_response.content)
+            content = llm_response.content.strip()
+            if content.startswith("```json"):
+                content = content[7:]
+            elif content.startswith("```"):
+                content = content[3:]
+            if content.endswith("```"):
+                content = content[:-3]
+            content = content.strip()
+            raw_recs = json.loads(content)
             if not isinstance(raw_recs, list):
                 raw_recs = []
         except Exception:

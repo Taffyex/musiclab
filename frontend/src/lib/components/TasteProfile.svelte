@@ -1,3 +1,4 @@
+<script lang="ts">
 	import type { LastfmProfile } from '$lib/types';
 	
 	interface Props {
@@ -6,6 +7,7 @@
 		error?: string | null;
 	}
 	let { profile = null, loading = false, error = null }: Props = $props();
+</script>
 
 <div class="card taste-profile">
 	<h2 class="text-2xl font-bold mb-md">Your Musical Taste</h2>

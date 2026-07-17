@@ -5,6 +5,7 @@ export interface User {
 	id: number;
 	username: string;
 	lastfm_username: string | null;
+	llm_provider?: string;
 }
 
 export interface LoginRequest {
@@ -129,4 +130,59 @@ export interface AppSettings {
 export interface ApiError {
 	detail: string;
 	status: number;
+}
+
+// --- Explore ---
+export interface Genre { id: number; name: string; slug: string; source: string; style_count: number; }
+export interface Style { id: number; name: string; slug: string; genre_id: number; genre_name: string; }
+export interface GenreTree { genre: Genre; styles: Style[]; }
+
+export interface ArtistSummary {
+	id: number; name: string; slug: string; image_url: string;
+	lastfm_listeners: number | null; lastfm_playcount: number | null;
+	genres: string[]; styles: string[];
+	already_in_lidarr: boolean;
+}
+
+export interface ArtistDetail extends ArtistSummary {
+	bio: string; discogs_profile: string; country: string;
+	begin_date: string; end_date: string; artist_type: string;
+	mb_tags: string[]; mb_relations: MBRelation[];
+	releases: ReleaseDetail[]; similar_artists: ArtistSummary[];
+	lidarr_artist: Record<string, any> | null;
+}
+
+export interface ReleaseDetail {
+	id: number; title: string; year: number | null;
+	release_type: string; label: string; format: string;
+	cover_url: string; genres: string[]; styles: string[];
+	credits: Credit[];
+}
+
+export interface Credit {
+	id: number; entity_name: string; entity_slug: string;
+	role: string; entity_type: string;
+}
+
+export interface CreditEntity {
+	name: string; slug: string; entity_type: string;
+	roles: string[]; release_count: number;
+	releases: ReleaseWithArtist[];
+}
+
+export interface ReleaseWithArtist {
+	release_id: number; title: string; year: number | null;
+	artist_name: string; artist_slug: string; role: string; cover_url: string;
+}
+
+export interface MBRelation {
+	type: string; direction: string; target_name: string;
+	target_mbid: string; begin: string; end: string;
+}
+
+export interface ExploreFilters {
+	genre?: string; style?: string; decade?: string;
+	sort_by: 'listeners' | 'scrobbles' | 'name';
+	sort_order: 'asc' | 'desc';
+	page: number; per_page: number;
 }

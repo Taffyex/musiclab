@@ -1,0 +1,44 @@
+{
+  "genres": [
+    {
+      "name": "Electronic",
+      "styles": ["Ambient", "Breakbeat", "Deep House", "Drum n Bass", "Dubstep", "Electro", "House", "IDM", "Techno", "Trance", "Synth-pop", "Downtempo"]
+    },
+    {
+      "name": "Rock",
+      "styles": ["Alternative Rock", "Classic Rock", "Garage Rock", "Grunge", "Indie Rock", "Post-Punk", "Progressive Rock", "Psychedelic Rock", "Shoegaze", "Hard Rock"]
+    },
+    {
+      "name": "Pop",
+      "styles": ["Synth-pop", "Indie Pop", "K-pop", "J-pop", "Dream Pop", "Vocal", "Chanson"]
+    },
+    {
+      "name": "Hip Hop",
+      "styles": ["Boom Bap", "Trap", "Conscious", "Gangsta", "Instrumental", "Lo-Fi", "Trip Hop"]
+    },
+    {
+      "name": "Jazz",
+      "styles": ["Bebop", "Cool Jazz", "Free Jazz", "Fusion", "Smooth Jazz", "Big Band", "Swing"]
+    },
+    {
+      "name": "Classical",
+      "styles": ["Baroque", "Romantic", "Modern", "Contemporary", "Opera", "Choral", "Minimal"]
+    },
+    {
+      "name": "Folk, World, & Country",
+      "styles": ["Country", "Bluegrass", "Folk", "Celtic", "Flamenco", "Afrobeat", "Highlife"]
+    },
+    {
+      "name": "Funk / Soul",
+      "styles": ["Funk", "Soul", "Neo Soul", "R&B", "Disco", "Gospel"]
+    },
+    {
+      "name": "Reggae",
+      "styles": ["Roots Reggae", "Dub", "Dancehall", "Ska", "Rocksteady"]
+    },
+    {
+      "name": "Metal",
+      "styles": ["Heavy Metal", "Death Metal", "Black Metal", "Doom Metal", "Thrash", "Nu Metal"]
+    }
+  ]
+}

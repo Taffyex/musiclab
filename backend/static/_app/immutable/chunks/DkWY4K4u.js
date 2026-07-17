@@ -1,0 +1,1 @@
+import{G as e}from"./DgWb4wp3.js";import{t}from"./D10sD2r3.js";import"./Hx7e4PNW.js";import{i as n}from"./Djpr0LS_.js";import{t as r}from"./BwcusTUv.js";async function i(){if(!e(n))try{let e=await r.auth.me();return n.login(e.user),!0}catch{return t(`/login`),!1}return!0}export{i as t};

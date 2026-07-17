@@ -166,5 +166,49 @@ export const apiClient = {
 			const res = await fetchBase('/llm/chat/memory');
 			return res.json();
 		}
+	},
+	explore: {
+		getGenres: async () => {
+			const res = await fetchBase('/explore/genres');
+			return res.json();
+		},
+		getGenre: async (slug: string) => {
+			const res = await fetchBase(`/explore/genres/${slug}`);
+			return res.json();
+		},
+		getGenreArtists: async (slug: string, filters: any) => {
+			const query = new URLSearchParams(filters as Record<string, string>).toString();
+			const res = await fetchBase(`/explore/genres/${slug}/artists?${query}`);
+			return res.json();
+		},
+		getStyleArtists: async (slug: string, filters: any) => {
+			const query = new URLSearchParams(filters as Record<string, string>).toString();
+			const res = await fetchBase(`/explore/styles/${slug}/artists?${query}`);
+			return res.json();
+		},
+		getArtist: async (slug: string) => {
+			const res = await fetchBase(`/explore/artists/${slug}`);
+			return res.json();
+		},
+		getSimilar: async (slug: string) => {
+			const res = await fetchBase(`/explore/artists/${slug}/similar`);
+			return res.json();
+		},
+		getReleases: async (slug: string) => {
+			const res = await fetchBase(`/explore/artists/${slug}/releases`);
+			return res.json();
+		},
+		getCredits: async (id: number) => {
+			const res = await fetchBase(`/explore/releases/${id}/credits`);
+			return res.json();
+		},
+		getCreditEntity: async (slug: string) => {
+			const res = await fetchBase(`/explore/credits/${slug}`);
+			return res.json();
+		},
+		search: async (q: string) => {
+			const res = await fetchBase(`/explore/search?q=${encodeURIComponent(q)}`);
+			return res.json();
+		}
 	}
 };

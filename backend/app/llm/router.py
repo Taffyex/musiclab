@@ -17,11 +17,15 @@ from app.llm.memory import MemoryService
 from app.llm.prompts import build_system_prompt
 import aiosqlite
 
-def get_llm_provider() -> LLMProvider:
-    provider = settings.llm_provider.lower()
+def get_llm_provider(current_user: dict = Depends(get_current_user)) -> LLMProvider:
+    provider = current_user.get("llm_provider") or settings.llm_provider
+    provider = provider.lower()
     if provider == "openai":
         from app.llm.providers.openai import OpenAIProvider
         return OpenAIProvider(api_key=settings.openai_api_key)
+    elif provider == "deepseek":
+        from app.llm.providers.openai import OpenAIProvider
+        return OpenAIProvider(api_key=settings.deepseek_api_key, base_url="https://api.deepseek.com/v1", model="deepseek-chat")
     elif provider == "anthropic":
         from app.llm.providers.anthropic import AnthropicProvider
         return AnthropicProvider(api_key=settings.anthropic_api_key)

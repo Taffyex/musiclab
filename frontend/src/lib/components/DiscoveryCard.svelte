@@ -16,7 +16,7 @@
 <div class="card discovery-card flex-col gap-sm">
 	<div class="header flex-between">
 		<h3 class="text-xl font-bold">
-			<a href="/discover/{item.id}" class="text-primary hover-underline">{item.artist_name}</a>
+			<a href="/artist/{item.artist_name.toLowerCase().replace(/ /g, '-').replace(/\//g, '-').replace(/,/g, '').replace(/&/g, 'and')}" class="text-primary hover-underline">{item.artist_name}</a>
 		</h3>
 		{#if item.already_in_lidarr}
 			<span class="score-badge lidarr-badge">In Lidarr</span>
@@ -27,12 +27,12 @@
 	
 	<div class="tags flex gap-xs wrap mt-sm">
 		{#each item.genre_tags as tag}
-			<span class="tag">{tag}</span>
+			<a href="/explore?genre={tag.toLowerCase().replace(/ /g, '-').replace(/\//g, '-').replace(/,/g, '').replace(/&/g, 'and')}" class="tag">{tag}</a>
 		{/each}
 	</div>
 	
 	<div class="links flex gap-sm mt-md">
-		<a href="/discover/{item.id}" class="btn btn-secondary text-sm platform-btn">
+		<a href="/artist/{item.artist_name.toLowerCase().replace(/ /g, '-').replace(/\//g, '-').replace(/,/g, '').replace(/&/g, 'and')}" class="btn btn-secondary text-sm platform-btn">
 			View Details
 		</a>
 		{#if !item.already_in_lidarr}

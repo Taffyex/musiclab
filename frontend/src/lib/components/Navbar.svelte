@@ -25,6 +25,7 @@
 		</button>
 		
 		{#if $userStore}
+			<a href="/explore" class="btn btn-ghost">Explore</a>
 			<a href="/discover" class="btn btn-ghost">Discover</a>
 			<a href="/chat" class="btn btn-ghost">Chat</a>
 			<div class="user-menu flex-center gap-sm">

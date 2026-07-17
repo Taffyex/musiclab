@@ -25,3 +25,24 @@ class DiscogsRelease(BaseModel):
     genres: list[str] = Field(default_factory=list)
     styles: list[str] = Field(default_factory=list)
     cover_url: str = ""
+
+
+class DiscogsCredit(BaseModel):
+    """A single credit from a Discogs release."""
+    name: str
+    role: str
+    resource_url: str = ""
+    artist_id: int | None = None
+    
+
+class DiscogsReleaseDetail(BaseModel):
+    """Full Discogs release with credits."""
+    id: int
+    title: str
+    year: int | None = None
+    labels: list[str] = Field(default_factory=list)
+    formats: list[str] = Field(default_factory=list)
+    genres: list[str] = Field(default_factory=list)
+    styles: list[str] = Field(default_factory=list)
+    cover_url: str = ""
+    credits: list[DiscogsCredit] = Field(default_factory=list)

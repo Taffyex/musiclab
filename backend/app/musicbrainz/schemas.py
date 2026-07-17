@@ -16,7 +16,7 @@ class MBArtist(BaseModel):
     begin_date: str = ""
     end_date: str = ""
     tags: list[str] = Field(default_factory=list)
-    relations: list[dict] = Field(default_factory=list)
+    relations: list[MBRelation] = Field(default_factory=list)
 
 
 class MBRelease(BaseModel):
@@ -28,3 +28,14 @@ class MBRelease(BaseModel):
     country: str = ""
     label: str = ""
     format: str = ""
+
+
+class MBRelation(BaseModel):
+    """A MusicBrainz artist relationship."""
+    type: str          # 'member of band', 'collaboration', 'influenced by', etc.
+    direction: str     # 'forward' | 'backward'
+    target_name: str
+    target_mbid: str = ""
+    begin: str = ""
+    end: str = ""
+    attributes: list[str] = Field(default_factory=list)
