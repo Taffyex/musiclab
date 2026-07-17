@@ -210,5 +210,18 @@ export const apiClient = {
 			const res = await fetchBase(`/explore/search?q=${encodeURIComponent(q)}`);
 			return res.json();
 		}
+	},
+	settings: {
+		get: async () => {
+			const res = await fetchBase('/settings');
+			return res.json();
+		},
+		save: async (data: any) => {
+			const res = await fetchBase('/settings', {
+				method: 'PUT',
+				body: JSON.stringify(data)
+			});
+			return res.json();
+		}
 	}
 };

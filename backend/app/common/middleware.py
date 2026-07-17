@@ -77,13 +77,32 @@ def register_error_handlers(app: FastAPI) -> None:
 # ---------------------------------------------------------------------------
 
 
-async def rate_limit_middleware(request: Request, call_next):  # noqa: ANN001
-    """Placeholder rate-limiting middleware.
+import time
+from collections import defaultdict
+from fastapi.responses import JSONResponse
 
-    TODO:
-        - Track request counts per client IP / API key
-        - Use a sliding-window or token-bucket algorithm
-        - Raise RateLimitError when threshold exceeded
-    """
+# Simple in-memory sliding window rate limiter
+_rate_limit_store: dict[str, list[float]] = defaultdict(list)
+RATE_LIMIT_WINDOW = 60.0  # seconds
+RATE_LIMIT_MAX_REQUESTS = 5
+
+async def rate_limit_middleware(request: Request, call_next):  # noqa: ANN001
+    """Rate-limiting middleware for login endpoint."""
+    if request.url.path == "/api/auth/login" and request.method == "POST":
+        client_ip = request.client.host if request.client else "unknown"
+        now = time.time()
+        
+        # Clean up old timestamps
+        _rate_limit_store[client_ip] = [t for t in _rate_limit_store[client_ip] if now - t < RATE_LIMIT_WINDOW]
+        
+        if len(_rate_limit_store[client_ip]) >= RATE_LIMIT_MAX_REQUESTS:
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Too many login attempts. Please try again later."},
+                headers={"Retry-After": str(int(RATE_LIMIT_WINDOW))}
+            )
+            
+        _rate_limit_store[client_ip].append(now)
+
     response = await call_next(request)
     return response

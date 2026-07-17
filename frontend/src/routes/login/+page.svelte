@@ -16,8 +16,8 @@
 			const res = await apiClient.auth.me();
 			userStore.login(res.user);
 			goto('/discover');
-		} catch (err: any) {
-			error = err.message || 'Login failed. Please check your credentials.';
+		} catch (err: unknown) {
+			error = err instanceof Error ? err.message : 'Login failed. Please check your credentials.';
 		} finally {
 			loading = false;
 		}
@@ -77,21 +77,5 @@
 		width: 100%;
 		max-width: 400px;
 		padding: var(--space-xl);
-	}
-	
-	.w-full {
-		width: 100%;
-	}
-	
-	.mb-md { margin-bottom: var(--space-md); }
-	.mt-sm { margin-top: var(--space-sm); }
-	
-	.error-msg {
-		color: var(--error);
-		background: rgba(225, 112, 85, 0.1);
-		padding: var(--space-sm);
-		border-radius: var(--radius-md);
-		text-align: center;
-		font-size: 0.875rem;
 	}
 </style>

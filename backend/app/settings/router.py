@@ -22,17 +22,29 @@ class SettingsUpdate(BaseModel):
     openai_api_key: str | None = None
     deepseek_api_key: str | None = None
 
+def mask_key(key: str | None) -> str:
+    if not key:
+        return ""
+    if len(key) <= 8:
+        return "********"
+    return f"{key[:4]}****{key[-4:]}"
+
+def is_masked(key: str | None) -> bool:
+    if not key:
+        return False
+    return "****" in key
+
 @router.get("")
 async def get_settings(current_user: dict = Depends(get_current_user)) -> dict:
     return {
         "lastfm_username": current_user.get("lastfm_username", "") or "",
-        "lastfm_api_key": settings.lastfm_api_key,
+        "lastfm_api_key": mask_key(settings.lastfm_api_key),
         "lidarr_url": settings.lidarr_url,
-        "lidarr_api_key": settings.lidarr_api_key,
+        "lidarr_api_key": mask_key(settings.lidarr_api_key),
         "llm_provider": current_user.get("llm_provider", settings.llm_provider),
-        "anthropic_api_key": settings.anthropic_api_key,
-        "openai_api_key": settings.openai_api_key,
-        "deepseek_api_key": getattr(settings, "deepseek_api_key", ""),
+        "anthropic_api_key": mask_key(settings.anthropic_api_key),
+        "openai_api_key": mask_key(settings.openai_api_key),
+        "deepseek_api_key": mask_key(settings.deepseek_api_key),
     }
 
 @router.put("")
@@ -52,7 +64,7 @@ async def update_settings(
     
     env_path = Path(__file__).resolve().parent.parent.parent / ".env"
     
-    if update.lastfm_api_key is not None:
+    if update.lastfm_api_key is not None and not is_masked(update.lastfm_api_key):
         set_key(str(env_path), "LASTFM_API_KEY", update.lastfm_api_key)
         settings.lastfm_api_key = update.lastfm_api_key
         
@@ -60,19 +72,19 @@ async def update_settings(
         set_key(str(env_path), "LIDARR_URL", update.lidarr_url)
         settings.lidarr_url = update.lidarr_url
         
-    if update.lidarr_api_key is not None:
+    if update.lidarr_api_key is not None and not is_masked(update.lidarr_api_key):
         set_key(str(env_path), "LIDARR_API_KEY", update.lidarr_api_key)
         settings.lidarr_api_key = update.lidarr_api_key
         
-    if update.anthropic_api_key is not None:
+    if update.anthropic_api_key is not None and not is_masked(update.anthropic_api_key):
         set_key(str(env_path), "ANTHROPIC_API_KEY", update.anthropic_api_key)
         settings.anthropic_api_key = update.anthropic_api_key
         
-    if update.openai_api_key is not None:
+    if update.openai_api_key is not None and not is_masked(update.openai_api_key):
         set_key(str(env_path), "OPENAI_API_KEY", update.openai_api_key)
         settings.openai_api_key = update.openai_api_key
         
-    if update.deepseek_api_key is not None:
+    if update.deepseek_api_key is not None and not is_masked(update.deepseek_api_key):
         set_key(str(env_path), "DEEPSEEK_API_KEY", update.deepseek_api_key)
         settings.deepseek_api_key = update.deepseek_api_key
 

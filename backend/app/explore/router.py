@@ -5,7 +5,7 @@ from __future__ import annotations
 import aiosqlite
 from fastapi import APIRouter, Depends, Query
 
-from app.common.auth_deps import get_current_user
+from app.auth.dependencies import get_current_user
 from app.config import settings
 from app.database import get_db
 from app.discogs.client import DiscogsClient

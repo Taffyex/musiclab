@@ -216,14 +216,14 @@ class DiscoveryService:
         """
         import asyncio
         lastfm_data, discogs_data, mb_data = await asyncio.gather(
-            self.lastfm.get_full_profile(artist_name), # using profile for artist data temporarily or a custom call
+            self.lastfm.client.get_artist_info(artist_name),
             self.discogs.enrich_artist(artist_name),
             self.musicbrainz.enrich_artist(artist_name),
             return_exceptions=True
         )
         
         return {
-            "lastfm": lastfm_data.model_dump() if not isinstance(lastfm_data, Exception) and lastfm_data else None,
+            "lastfm": lastfm_data if not isinstance(lastfm_data, Exception) and lastfm_data else None,
             "discogs": discogs_data.model_dump() if not isinstance(discogs_data, Exception) and discogs_data else None,
             "musicbrainz": mb_data.model_dump() if not isinstance(mb_data, Exception) and mb_data else None
         }

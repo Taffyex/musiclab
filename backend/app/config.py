@@ -1,11 +1,11 @@
-from __future__ import annotations
-
 """
 MusicLab — Application configuration via environment variables.
 
 Uses pydantic-settings to load and validate all config from .env file
 or environment variables at startup.
 """
+
+from __future__ import annotations
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import field_validator
@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     # ─── Application ───
     environment: str = "development"
     app_secret_key: str = "change-me-to-a-random-string"
+    cors_origins: str = "http://localhost:5173"
     
     @field_validator("app_secret_key")
     @classmethod

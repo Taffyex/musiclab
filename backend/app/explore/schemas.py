@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pydantic import BaseModel, Field
+from typing import Literal
 
 
 class Genre(BaseModel):
@@ -117,3 +118,25 @@ class ExploreFilters(BaseModel):
     sort_order: str = "desc"           # 'asc' | 'desc'
     page: int = 1
     per_page: int = 20
+
+
+class FavoriteItem(BaseModel):
+    """A single favorited entity with resolved name/slug."""
+    entity_type: Literal["artist", "genre", "style"]
+    entity_id: int
+    name: str
+    slug: str
+    image_url: str = ""  # populated only for artists
+
+
+class UserFavorites(BaseModel):
+    """All favorites for a user, grouped by entity type."""
+    artists: list[FavoriteItem] = Field(default_factory=list)
+    genres: list[FavoriteItem] = Field(default_factory=list)
+    styles: list[FavoriteItem] = Field(default_factory=list)
+
+
+class FavoriteRequest(BaseModel):
+    """Request body for adding a favorite."""
+    entity_type: Literal["artist", "genre", "style"]
+    entity_id: int

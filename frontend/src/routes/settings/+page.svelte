@@ -2,6 +2,7 @@
 	import { userStore } from '$lib/stores';
 	import { onMount } from 'svelte';
 	import { requireAuth } from '$lib/utils/auth-guard';
+	import { apiClient } from '$lib/api';
 
 	let settings = $state({
 		lastfm_username: '',
@@ -22,11 +23,8 @@
 	onMount(async () => {
 		await requireAuth();
 		try {
-			const res = await fetch('/api/settings');
-			if (res.ok) {
-				const data = await res.json();
-				settings = { ...settings, ...data };
-			}
+			const data = await apiClient.settings.get();
+			settings = { ...settings, ...data };
 		} catch (e) {
 			console.error("Failed to load settings", e);
 		} finally {
@@ -39,12 +37,7 @@
 		message = '';
 		error = '';
 		try {
-			const res = await fetch('/api/settings', {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(settings)
-			});
-			if (!res.ok) throw new Error('Failed to save settings');
+			await apiClient.settings.save(settings);
 			message = 'Settings saved successfully!';
 			
 			if ($userStore) {
@@ -118,18 +111,10 @@
 				<div class="form-group mb-sm">
 					<label class="text-secondary" for="llm_provider">Provider</label>
 					<select class="input w-full" id="llm_provider" bind:value={settings.llm_provider}>
-						<option value="anthropic">Anthropic (Claude)</option>
 						<option value="openai">OpenAI (ChatGPT)</option>
 						<option value="deepseek">DeepSeek</option>
-						<option value="ollama">Ollama (Local)</option>
 					</select>
 				</div>
-				{#if settings.llm_provider === 'anthropic'}
-					<div class="form-group mb-sm">
-						<label class="text-secondary" for="anthropic_api_key">Anthropic API Key</label>
-						<input class="input w-full" id="anthropic_api_key" type="password" bind:value={settings.anthropic_api_key} />
-					</div>
-				{/if}
 				{#if settings.llm_provider === 'openai'}
 					<div class="form-group mb-sm">
 						<label class="text-secondary" for="openai_api_key">OpenAI API Key</label>
@@ -158,13 +143,6 @@
 		max-width: 600px;
 		margin: 0 auto;
 	}
-	
-	.mb-md { margin-bottom: var(--space-md); }
-	.mb-sm { margin-bottom: var(--space-sm); }
-	.mt-sm { margin-top: var(--space-sm); }
-	.mt-md { margin-top: var(--space-md); }
-	.py-xl { padding: var(--space-xl) 0; }
-	.w-full { width: 100%; }
 	
 	.divider {
 		border: none;

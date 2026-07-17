@@ -56,14 +56,20 @@ app = FastAPI(
 
 register_error_handlers(app)
 
+from app.config import settings
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[origin.strip() for origin in settings.cors_origins.split(",")],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+
+from app.common.middleware import register_error_handlers, rate_limit_middleware
+
+app.middleware("http")(rate_limit_middleware)
 
 # ──────────────────────────────────────────────
 # Router registration

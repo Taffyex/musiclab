@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 
 import aiosqlite
 
-from app.common.exceptions import NotFoundError
+from app.common.exceptions import NotFoundError, ExternalAPIError
 from app.discogs.client import DiscogsClient
 from app.explore.schemas import (
     ArtistDetail, ArtistSummary, Credit, CreditEntity, ExploreFilters,
@@ -79,14 +79,9 @@ class ExploreService:
             JOIN artist_genres ag ON a.id = ag.artist_id
             WHERE ag.genre_id = ?
         """
-        order_by = "a.lastfm_listeners DESC"
-        if filters.sort_by == "scrobbles":
-            order_by = "a.lastfm_playcount DESC"
-        elif filters.sort_by == "name":
-            order_by = "a.name ASC"
-            
-        if filters.sort_order == "asc":
-            order_by = order_by.replace("DESC", "ASC")
+        column = {"listeners": "a.lastfm_listeners", "scrobbles": "a.lastfm_playcount", "name": "a.name"}.get(filters.sort_by, "a.lastfm_listeners")
+        direction = "ASC" if filters.sort_order == "asc" else "DESC"
+        order_by = f"{column} {direction}"
             
         offset = (filters.page - 1) * filters.per_page
         query += f" ORDER BY {order_by} LIMIT ? OFFSET ?"
@@ -124,14 +119,9 @@ class ExploreService:
             JOIN artist_styles ast ON a.id = ast.artist_id
             WHERE ast.style_id = ?
         """
-        order_by = "a.lastfm_listeners DESC"
-        if filters.sort_by == "scrobbles":
-            order_by = "a.lastfm_playcount DESC"
-        elif filters.sort_by == "name":
-            order_by = "a.name ASC"
-            
-        if filters.sort_order == "asc":
-            order_by = order_by.replace("DESC", "ASC")
+        column = {"listeners": "a.lastfm_listeners", "scrobbles": "a.lastfm_playcount", "name": "a.name"}.get(filters.sort_by, "a.lastfm_listeners")
+        direction = "ASC" if filters.sort_order == "asc" else "DESC"
+        order_by = f"{column} {direction}"
             
         offset = (filters.page - 1) * filters.per_page
         query += f" ORDER BY {order_by} LIMIT ? OFFSET ?"
@@ -162,17 +152,17 @@ class ExploreService:
         lf_task = asyncio.create_task(self._lastfm.get_artist_info(artist_name))
         mb_task = asyncio.create_task(self._musicbrainz.search_artist(artist_name))
         
+        import httpx
         try:
             lf_info = await lf_task
-        except Exception:
+        except (httpx.HTTPError, ExternalAPIError):
             logger.warning("Failed to fetch lastfm info for %s", artist_name)
             lf_info = {}
-            
         try:
             mb_search = await mb_task
             mb_id = mb_search[0]["id"] if mb_search else None
             mb_info = await self._musicbrainz.get_artist_with_full_relations(mb_id) if mb_id else {}
-        except Exception:
+        except (httpx.HTTPError, ExternalAPIError):
             logger.warning("Failed to fetch mb info for %s", artist_name)
             mb_info = {}
             mb_id = None
@@ -199,7 +189,7 @@ class ExploreService:
             else:
                 dc_id = None
                 image_url = ""
-        except Exception:
+        except (httpx.HTTPError, ExternalAPIError):
             logger.warning("Failed to fetch discogs info for %s", artist_name)
             dc_id = None
             image_url = ""

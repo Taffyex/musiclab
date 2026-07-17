@@ -18,7 +18,8 @@ class SeedService:
 
     def __init__(self, db: aiosqlite.Connection) -> None:
         self._db = db
-        self._lastfm = LastfmClient()
+        from app.config import settings
+        self._lastfm = LastfmClient(api_key=settings.lastfm_api_key)
 
     async def seed_if_needed(self) -> None:
         """Seed genres and styles if the database is empty or data is old."""

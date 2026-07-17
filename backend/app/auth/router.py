@@ -45,7 +45,7 @@ async def login(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
 
     token = await service.create_session(db, user["id"])
-    response.set_cookie(key="session", value=token, httponly=True, secure=settings.environment == 'production', samesite="lax", max_age=7*24*60*60)
+    response.set_cookie(key="session", value=token, httponly=True, secure=settings.environment == 'production' or request.url.scheme == 'https', samesite="lax", max_age=7*24*60*60)
     return {"message": "Logged in successfully"}
 
 

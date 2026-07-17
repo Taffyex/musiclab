@@ -63,9 +63,8 @@ class MemoryService:
         import json
         
         conv_str = "\n".join([f"{msg.role}: {msg.content}" for msg in conversation])
-        prompt = f"{MEMORY_EXTRACTION_PROMPT}\n\nConversation:\n{conv_str}"
-        
-        response = await self.llm.generate(prompt)
+        user_msg = f"Conversation:\n{conv_str}"
+        response = await self.llm.generate(system_prompt=MEMORY_EXTRACTION_PROMPT, user_message=user_msg)
         try:
             update_data = json.loads(response.content)
             update = MemoryUpdate(**update_data)
