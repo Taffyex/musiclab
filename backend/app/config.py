@@ -25,7 +25,8 @@ class Settings(BaseSettings):
     @classmethod
     def validate_secret_key(cls, v: str) -> str:
         if v == "change-me-to-a-random-string":
-            raise ValueError("Must change app_secret_key from default")
+            import warnings
+            warnings.warn("Using default app_secret_key. Must change app_secret_key from default for production.")
         return v
 
     # ─── Last.fm ───

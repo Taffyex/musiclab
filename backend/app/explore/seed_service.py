@@ -63,7 +63,7 @@ class SeedService:
                 await self._db.execute(
                     "INSERT INTO genres (name, slug, source, created_at) "
                     "VALUES (?, ?, 'discogs', ?) "
-                    "ON CONFLICT(name) DO UPDATE SET created_at=excluded.created_at",
+                    "ON CONFLICT(slug) DO UPDATE SET created_at=excluded.created_at, name=excluded.name",
                     (name, slug, now),
                 )
             except Exception:
@@ -119,7 +119,7 @@ class SeedService:
                     """
                     INSERT INTO genres (name, slug, source, created_at)
                     VALUES (?, ?, 'lastfm', ?)
-                    ON CONFLICT(name) DO NOTHING
+                    ON CONFLICT(slug) DO NOTHING
                     """,
                     (tag_name, slug, datetime.now(timezone.utc).isoformat())
                 )

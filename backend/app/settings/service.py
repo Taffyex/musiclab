@@ -46,6 +46,7 @@ class SettingsService:
             ("lastfm_api_key", "LASTFM_API_KEY"),
             ("lidarr_url", "LIDARR_URL"),
             ("lidarr_api_key", "LIDARR_API_KEY"),
+            ("llm_provider", "LLM_PROVIDER"),
             ("anthropic_api_key", "ANTHROPIC_API_KEY"),
             ("openai_api_key", "OPENAI_API_KEY"),
             ("deepseek_api_key", "DEEPSEEK_API_KEY"),
@@ -58,15 +59,17 @@ class SettingsService:
             set_key(str(_ENV_PATH), env_key, value)
 
         # Update runtime settings
-        if "lastfm_api_key" in env_writes:
+        if "LLM_PROVIDER" in env_writes:
+            app_settings.llm_provider = env_writes["LLM_PROVIDER"]
+        if "LASTFM_API_KEY" in env_writes:
             app_settings.lastfm_api_key = env_writes["LASTFM_API_KEY"]
-        if "lidarr_url" in env_writes:
+        if "LIDARR_URL" in env_writes:
             app_settings.lidarr_url = env_writes["LIDARR_URL"]
-        if "lidarr_api_key" in env_writes:
+        if "LIDARR_API_KEY" in env_writes:
             app_settings.lidarr_api_key = env_writes["LIDARR_API_KEY"]
-        if "anthropic_api_key" in env_writes:
+        if "ANTHROPIC_API_KEY" in env_writes:
             app_settings.anthropic_api_key = env_writes["ANTHROPIC_API_KEY"]
-        if "openai_api_key" in env_writes:
+        if "OPENAI_API_KEY" in env_writes:
             app_settings.openai_api_key = env_writes["OPENAI_API_KEY"]
-        if "deepseek_api_key" in env_writes:
+        if "DEEPSEEK_API_KEY" in env_writes:
             app_settings.deepseek_api_key = env_writes["DEEPSEEK_API_KEY"]

@@ -23,6 +23,8 @@ class OpenAIProvider(LLMProvider):
         model: str = "gpt-4o",
         base_url: str | None = None,
     ) -> None:
+        if not api_key:
+            raise ValueError("API key not configured for OpenAI provider")
         self.model = model
         self._client = openai.AsyncOpenAI(api_key=api_key, base_url=base_url)
 

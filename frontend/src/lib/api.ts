@@ -129,7 +129,7 @@ export const apiClient = {
 				method: 'POST',
 				credentials: 'include',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ content })
+				body: JSON.stringify({ content, role: 'user' })
 			});
 
 			if (!res.ok) {

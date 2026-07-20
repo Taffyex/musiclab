@@ -14,7 +14,12 @@ from app.discovery.schemas import DiscoveryBatch, DiscoveryCard
 from app.lastfm.service import LastfmService
 from app.lidarr.service import LidarrService
 from app.llm.base import LLMProvider
+from app.llm.prompts import build_system_prompt
 from app.musicbrainz.service import MusicBrainzService
+
+import json
+from datetime import datetime, timezone
+from uuid import uuid4
 
 
 class DiscoveryService:
@@ -61,11 +66,6 @@ class DiscoveryService:
         Returns:
             A :class:`DiscoveryBatch` containing enriched cards.
         """
-        from app.llm.prompts import build_system_prompt
-        import json
-        from datetime import datetime, timezone
-        from uuid import uuid4
-        
         # 1. Load user profile and memory
         profile = None
         user_row = await self.db.execute("SELECT lastfm_username FROM users WHERE id = ?", (user_id,))
@@ -154,18 +154,38 @@ class DiscoveryService:
             cards.append(card)
             
         # 5. Persist batch
-        batch = DiscoveryBatch(
-            id=str(uuid4()),
-            created_at=datetime.now(timezone.utc),
+        batch_id = str(uuid4())
+        created_at = datetime.now(timezone.utc)
+        
+        # Insert batch
+        cursor = await self.db.execute(
+            "INSERT INTO discovery_batches (id, user_id, created_at) VALUES (?, ?, ?)",
+            (batch_id, user_id, created_at)
+        )
+        await self.db.commit()
+        
+        # Insert cards individually
+        for c in cards:
+            await self.db.execute(
+                """INSERT INTO discovery_cards (
+                    id, batch_id, artist_name, genre_tags, era, ai_blurb, why_it_matches,
+                    lastfm_listeners, lastfm_playcount, mb_data, discogs_data, already_in_lidarr
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    c.id, batch_id, c.artist_name, json.dumps(c.genre_tags), c.era, c.ai_blurb, c.why_it_matches,
+                    c.lastfm_listeners, c.lastfm_playcount, 
+                    json.dumps(c.mb_data) if c.mb_data else None, 
+                    json.dumps(c.discogs_data) if c.discogs_data else None,
+                    c.already_in_lidarr
+                )
+            )
+        await self.db.commit()
+        
+        return DiscoveryBatch(
+            id=batch_id,
+            created_at=created_at,
             cards=cards
         )
-        cursor = await self.db.execute(
-            "INSERT INTO discovery_batches (user_id, cards, created_at) VALUES (?, ?, ?)",
-            (user_id, batch.model_dump_json(), batch.created_at)
-        )
-        batch.id = str(cursor.lastrowid)
-        await self.db.commit()
-        return batch
 
     async def explore_similar(
         self, user_id: int, artist_name: str, count: int = 5
@@ -180,9 +200,6 @@ class DiscoveryService:
         Returns:
             A list of enriched :class:`DiscoveryCard` objects.
         """
-        from app.llm.prompts import build_system_prompt
-        from uuid import uuid4
-        
         system_prompt = build_system_prompt(mode="explore")
         user_prompt = f"Please explore {count} artists similar to {artist_name}."
         
@@ -249,15 +266,43 @@ class DiscoveryService:
         Returns:
             A list of :class:`DiscoveryBatch` objects, newest first.
         """
-        import json
         async with self.db.execute(
-            "SELECT cards FROM discovery_batches WHERE user_id = ? ORDER BY created_at DESC", 
+            "SELECT id, created_at FROM discovery_batches WHERE user_id = ? ORDER BY created_at DESC", 
             (user_id,)
         ) as cursor:
-            rows = await cursor.fetchall()
+            batch_rows = await cursor.fetchall()
             
         batches = []
-        for row in rows:
-            batches.append(DiscoveryBatch.model_validate(json.loads(row["cards"])))
+        for row in batch_rows:
+            batch_id = row["id"]
+            created_at = row["created_at"]
+            
+            cards = []
+            async with self.db.execute(
+                """SELECT id, artist_name, genre_tags, era, ai_blurb, why_it_matches,
+                          lastfm_listeners, lastfm_playcount, mb_data, discogs_data, already_in_lidarr
+                   FROM discovery_cards WHERE batch_id = ?""",
+                (batch_id,)
+            ) as c_cursor:
+                card_rows = await c_cursor.fetchall()
+                for crow in card_rows:
+                    cards.append(DiscoveryCard(
+                        id=str(crow["id"]),
+                        artist_name=crow["artist_name"],
+                        genre_tags=json.loads(crow["genre_tags"]) if crow["genre_tags"] else [],
+                        era=crow["era"],
+                        ai_blurb=crow["ai_blurb"],
+                        why_it_matches=crow["why_it_matches"],
+                        lastfm_listeners=crow["lastfm_listeners"],
+                        lastfm_playcount=crow["lastfm_playcount"],
+                        mb_data=json.loads(crow["mb_data"]) if crow["mb_data"] else None,
+                        discogs_data=json.loads(crow["discogs_data"]) if crow["discogs_data"] else None,
+                        already_in_lidarr=bool(crow["already_in_lidarr"])
+                    ))
+                    
+            if type(created_at) == str:
+                created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                
+            batches.append(DiscoveryBatch(id=str(batch_id), created_at=created_at, cards=cards))
             
         return batches

@@ -19,6 +19,11 @@ async def setup_db():
             "INSERT INTO users (id, username, password_hash, lastfm_username, llm_provider) VALUES (?, ?, ?, ?, ?)",
             (1, "admin", service.hash_password("adminpass"), "admin_lastfm", "openai")
         )
+        await db.execute("DELETE FROM artists")
+        await db.execute(
+            "INSERT INTO artists (id, name, slug) VALUES (?, ?, ?)",
+            (100, "Test Artist", "test-artist")
+        )
         await db.commit()
     yield
 
@@ -35,7 +40,9 @@ async def test_favorites_crud():
         response = await ac.get("/api/explore/favorites", cookies=cookies)
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 0
+        assert len(data["artists"]) == 0
+        assert len(data["genres"]) == 0
+        assert len(data["styles"]) == 0
         
         # 2. Add a favorite
         fav_payload = {
@@ -51,10 +58,10 @@ async def test_favorites_crud():
         response = await ac.get("/api/explore/favorites", cookies=cookies)
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 1
-        assert data[0]["entity_type"] == "artist"
-        assert data[0]["entity_id"] == 100
-        assert data[0]["name"] == "Test Artist"
+        assert len(data["artists"]) == 1
+        assert data["artists"][0]["entity_type"] == "artist"
+        assert data["artists"][0]["entity_id"] == 100
+        assert data["artists"][0]["name"] == "Test Artist"
         
         # 4. Delete favorite
         response = await ac.delete("/api/explore/favorites/artist/100", cookies=cookies)

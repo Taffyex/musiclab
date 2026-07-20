@@ -24,10 +24,12 @@ from app.musicbrainz.service import MusicBrainzService
 
 router = APIRouter()
 
-def get_discovery_service(
+from collections.abc import AsyncGenerator
+
+async def get_discovery_service(
     db: aiosqlite.Connection = Depends(get_db),
     llm = Depends(get_llm_provider)
-) -> DiscoveryService:
+) -> AsyncGenerator[DiscoveryService, None]:
     cache = CacheService(db=db)
     
     lastfm_client = LastfmClient(api_key=settings.lastfm_api_key)
@@ -42,7 +44,7 @@ def get_discovery_service(
     lidarr_client = LidarrClient(base_url=settings.lidarr_url, api_key=settings.lidarr_api_key)
     lidarr = LidarrService(client=lidarr_client)
     
-    return DiscoveryService(
+    service = DiscoveryService(
         lastfm=lastfm,
         discogs=discogs,
         musicbrainz=mb,
@@ -51,6 +53,13 @@ def get_discovery_service(
         cache=cache,
         db=db
     )
+    try:
+        yield service
+    finally:
+        await lastfm_client.close()
+        await discogs_client.close()
+        await mb_client.close()
+        await lidarr_client.close()
 
 @router.post("/generate", response_model=DiscoveryBatch)
 async def generate_discovery(

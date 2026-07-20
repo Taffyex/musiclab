@@ -17,11 +17,25 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 CREATE TABLE IF NOT EXISTS discovery_batches (
-    id          INTEGER   PRIMARY KEY AUTOINCREMENT,
+    id          TEXT      PRIMARY KEY,
     user_id     INTEGER   NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    cards       JSON      NOT NULL,
     prompt_used TEXT,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS discovery_cards (
+    id                TEXT    PRIMARY KEY,
+    batch_id          TEXT    NOT NULL REFERENCES discovery_batches(id) ON DELETE CASCADE,
+    artist_name       TEXT    NOT NULL,
+    genre_tags        JSON,
+    era               TEXT,
+    ai_blurb          TEXT,
+    why_it_matches    TEXT,
+    lastfm_listeners  INTEGER,
+    lastfm_playcount  INTEGER,
+    mb_data           JSON,
+    discogs_data      JSON,
+    already_in_lidarr BOOLEAN DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS memory_blocks (
@@ -74,9 +88,7 @@ CREATE TABLE IF NOT EXISTS artists (
     discogs_profile     TEXT    DEFAULT '',
     mb_tags             JSON,                     -- MusicBrainz tags array
     mb_relations        JSON,                     -- MusicBrainz relations array
-    fetched_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(discogs_id),
-    UNIQUE(mbid)
+    fetched_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Many-to-many: artist ↔ genre/style

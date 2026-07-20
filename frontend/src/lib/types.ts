@@ -24,8 +24,7 @@ export interface LastfmProfile {
 	playcount: number;
 	artist_count: number;
 	top_artists: TopArtist[];
-	top_tags: string[];
-	top_genres: Array<{ name: string; count: number }>;
+	top_tags: Array<{ name: string; count: number }>;
 	recent_tracks: RecentTrack[];
 	updated_at: string;
 }
@@ -41,7 +40,7 @@ export interface RecentTrack {
 	name: string;
 	artist: string;
 	album?: string;
-	played_at?: string;
+	timestamp?: number;
 	image_url?: string;
 }
 

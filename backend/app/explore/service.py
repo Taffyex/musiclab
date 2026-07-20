@@ -80,7 +80,7 @@ class ExploreService:
         direction = "ASC" if filters.sort_order == "asc" else "DESC"
 
         query = f"""
-            SELECT a.id, a.name, a.slug, a.image_url, a.lastfm_listeners, a.lastfm_playcount, a.genres, a.styles
+            SELECT a.id, a.name, a.slug, a.image_url, a.lastfm_listeners, a.lastfm_playcount, '[]' as genres, '[]' as styles
             FROM artists a
             JOIN {join_table} j ON a.id = j.artist_id
             WHERE j.{join_col} = ?
@@ -155,7 +155,13 @@ class ExploreService:
             dc_results = dc_search.get("results", [])
             if dc_results:
                 dc_id = dc_results[0].get("id")
+                # Sometimes cover_image is there, sometimes we need to fetch artist
                 image_url = dc_results[0].get("cover_image", "")
+                if not image_url and dc_id:
+                    artist_data = await self._discogs.get_artist(dc_id)
+                    images = artist_data.get("images", [])
+                    if images:
+                        image_url = images[0].get("resource_url", "")
             else:
                 dc_id = None
                 image_url = ""
@@ -189,6 +195,8 @@ class ExploreService:
             
         async with self._db.execute("SELECT id FROM artists WHERE slug = ?", (slug,)) as cursor:
             row = await cursor.fetchone()
+            if not row:
+                raise NotFoundError(f"Artist {artist_name} could not be cached.")
             artist_id = row[0]
             
         return ArtistDetail(
@@ -204,14 +212,15 @@ class ExploreService:
         query = """
             SELECT id, name, slug, bio, discogs_profile, country, begin_date, end_date,
                    artist_type, image_url, lastfm_listeners, lastfm_playcount,
-                   genres, styles, mb_tags, mb_relations, fetched_at
+                   '[]' as genres, '[]' as styles, mb_tags, mb_relations, fetched_at
             FROM artists WHERE slug = ?
         """
         async with self._db.execute(query, (artist_slug,)) as cursor:
             row = await cursor.fetchone()
             
         if not row:
-            # Try to enrich using name = unslugified
+            # Try to enrich using name if we can reverse slug, but we don't know the exact name.
+            # Best effort: use title cased space-separated slug.
             name = artist_slug.replace('-', ' ').title()
             return await self.enrich_and_cache_artist(name)
             
@@ -253,19 +262,79 @@ class ExploreService:
         except Exception:
             return []
 
+    async def search_artists(self, q: str) -> list[ArtistSummary]:
+        """Search artists by name from DB."""
+        artists = []
+        like_query = f"%{q}%"
+        async with self._db.execute(
+            """SELECT id, name, slug, image_url, lastfm_listeners, lastfm_playcount, '[]' as genres, '[]' as styles
+               FROM artists WHERE name LIKE ? ORDER BY lastfm_listeners DESC LIMIT 20""",
+            (like_query,)
+        ) as cursor:
+            async for row in cursor:
+                artists.append(ArtistSummary(
+                    id=row[0], name=row[1], slug=row[2], image_url=row[3],
+                    lastfm_listeners=row[4], lastfm_playcount=row[5],
+                    genres=[], styles=[], already_in_lidarr=False
+                ))
+        return artists
+
     async def get_artist_releases(self, artist_slug: str) -> list[ReleaseDetail]:
-        """Get artist releases (stub)."""
-        # We would normally query the releases table, or Discogs
-        # For now, return empty list
-        return []
+        """Get artist releases from DB."""
+        releases = []
+        async with self._db.execute(
+            """SELECT r.id, r.title, r.year, r.release_type, r.label, r.format, r.cover_url, r.genres, r.styles
+               FROM releases r JOIN artists a ON r.artist_id = a.id
+               WHERE a.slug = ? ORDER BY r.year DESC""",
+            (artist_slug,)
+        ) as cursor:
+            async for row in cursor:
+                releases.append(ReleaseDetail(
+                    id=row[0], title=row[1], year=row[2], release_type=row[3], label=row[4], format=row[5],
+                    cover_url=row[6] or "", genres=json.loads(row[7]) if row[7] else [], styles=json.loads(row[8]) if row[8] else [], credits=[]
+                ))
+        return releases
 
     async def get_release_credits(self, release_id: int) -> list[Credit]:
-        """Get credits for a release (stub)."""
-        return []
+        """Get credits for a release from DB."""
+        credits_list = []
+        async with self._db.execute(
+            "SELECT id, entity_name, entity_slug, role, entity_type FROM credits WHERE release_id = ?", (release_id,)
+        ) as cursor:
+            async for row in cursor:
+                credits_list.append(Credit(
+                    id=row[0], entity_name=row[1], entity_slug=row[2], role=row[3], entity_type=row[4]
+                ))
+        return credits_list
 
     async def get_credit_entity(self, entity_slug: str) -> CreditEntity:
-        """Get all releases for a producer/engineer/studio (stub)."""
-        return CreditEntity(name=entity_slug, slug=entity_slug, entity_type="person")
+        """Get all releases for a producer/engineer/studio from DB."""
+        name = ""
+        entity_type = ""
+        releases = []
+        roles_set = set()
+        async with self._db.execute(
+            """SELECT c.entity_name, c.entity_type, c.role, r.id, r.title, r.year, r.cover_url, a.name, a.slug
+               FROM credits c
+               JOIN releases r ON c.release_id = r.id
+               JOIN artists a ON r.artist_id = a.id
+               WHERE c.entity_slug = ?""", (entity_slug,)
+        ) as cursor:
+            async for row in cursor:
+                name = row[0]
+                entity_type = row[1]
+                roles_set.add(row[2])
+                releases.append(ReleaseWithArtist(
+                    release_id=row[3], title=row[4], year=row[5], cover_url=row[6] or "", artist_name=row[7], artist_slug=row[8], role=row[2]
+                ))
+        
+        if not name:
+            raise NotFoundError(f"Credit entity {entity_slug} not found")
+            
+        return CreditEntity(
+            name=name, slug=entity_slug, entity_type=entity_type,
+            roles=list(roles_set), release_count=len(releases), releases=releases
+        )
 
     async def get_user_favorites(self, user_id: int) -> UserFavorites:
         """Fetch all favorites for a user, resolving entity names via JOINs."""

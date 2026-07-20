@@ -134,8 +134,7 @@ async def search_artists(
     service: ExploreService = Depends(get_explore_service),
 ) -> list[ArtistSummary]:
     """Search artists by name."""
-    # Stub implementation
-    return []
+    return await service.search_artists(q)
 
 
 @router.get("/favorites")
