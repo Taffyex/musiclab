@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import httpx
 
-from app.common.exceptions import ExternalAPIError
 from app.common.http import BaseHttpClient
 
 
@@ -18,6 +17,7 @@ class DiscogsClient(BaseHttpClient):
     """
 
     BASE_URL: str = "https://api.discogs.com"
+    service_name: str = "Discogs"
 
     def __init__(self, token: str) -> None:
         self.token = token
@@ -30,15 +30,6 @@ class DiscogsClient(BaseHttpClient):
                 "Accept": "application/json",
             },
         )
-
-    async def _request(self, method: str, path: str, **kwargs: object) -> dict:
-        """Send a request to the Discogs API."""
-        try:
-            response = await self._http.request(method, path, **kwargs)
-            response.raise_for_status()
-            return response.json()
-        except httpx.HTTPError as e:
-            raise ExternalAPIError(service="Discogs", message=str(e)) from e
 
     async def search_artist(self, name: str) -> dict:
         return await self._request("GET", "/database/search", params={"q": name, "type": "artist"})

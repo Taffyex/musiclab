@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 import aiosqlite
 
 from app.common.exceptions import NotFoundError, ExternalAPIError
-from app.common.utils import slugify
+from app.common.utils import safe_json_dict, safe_json_list, slugify
 from app.discogs.client import DiscogsClient
 from app.explore.schemas import (
     ArtistDetail, ArtistSummary, Credit, CreditEntity, ExploreFilters,
@@ -22,6 +22,10 @@ from app.lastfm.client import LastfmClient
 from app.musicbrainz.client import MusicBrainzClient
 
 logger = logging.getLogger(__name__)
+
+# Reusable SQL fragments — single source of truth for genre/style subqueries
+_GENRES_SQL = """(SELECT json_group_array(g.name) FROM genres g JOIN artist_genres ag ON ag.genre_id = g.id WHERE ag.artist_id = {alias}.id) as genres"""
+_STYLES_SQL = """(SELECT json_group_array(s.name) FROM styles s JOIN artist_styles ast ON ast.style_id = s.id WHERE ast.artist_id = {alias}.id) as styles"""
 
 class ExploreService:
     """Service for exploring genres, styles, and artists."""
@@ -88,8 +92,8 @@ class ExploreService:
 
         query = f"""
             SELECT a.id, a.name, a.slug, a.image_url, a.lastfm_listeners, a.lastfm_playcount,
-                   (SELECT json_group_array(g.name) FROM genres g JOIN artist_genres ag ON ag.genre_id = g.id WHERE ag.artist_id = a.id) as genres,
-                   (SELECT json_group_array(s.name) FROM styles s JOIN artist_styles ast ON ast.style_id = s.id WHERE ast.artist_id = a.id) as styles
+                   {_GENRES_SQL.format(alias='a')},
+                   {_STYLES_SQL.format(alias='a')}
             FROM artists a
             JOIN {join_table} j ON a.id = j.artist_id
             WHERE j.{join_col} = ?
@@ -105,8 +109,8 @@ class ExploreService:
                 artists.append(ArtistSummary(
                     id=a_id, name=name, slug=art_slug, image_url=image_url,
                     lastfm_listeners=listeners, lastfm_playcount=playcount,
-                    genres=json.loads(g_json) if g_json else [],
-                    styles=json.loads(s_json) if s_json else [],
+                    genres=safe_json_list(g_json),
+                    styles=safe_json_list(s_json),
                     already_in_lidarr=False,
                 ))
 
@@ -228,11 +232,11 @@ class ExploreService:
 
     async def get_artist_detail(self, artist_slug: str) -> ArtistDetail:
         """Get full artist profile."""
-        query = """
+        query = f"""
             SELECT id, name, slug, bio, discogs_profile, country, begin_date, end_date,
                    artist_type, image_url, lastfm_listeners, lastfm_playcount,
-                   (SELECT json_group_array(g.name) FROM genres g JOIN artist_genres ag ON ag.genre_id = g.id WHERE ag.artist_id = artists.id) as genres,
-                   (SELECT json_group_array(s.name) FROM styles s JOIN artist_styles ast ON ast.style_id = s.id WHERE ast.artist_id = artists.id) as styles,
+                   {_GENRES_SQL.format(alias='artists')},
+                   {_STYLES_SQL.format(alias='artists')},
                    mb_tags, mb_relations, fetched_at
             FROM artists WHERE slug = ?
         """
@@ -257,10 +261,10 @@ class ExploreService:
             id=a_id, name=name, slug=slug, bio=bio, discogs_profile=dp,
             country=country, begin_date=bd, end_date=ed, artist_type=atype,
             image_url=img, lastfm_listeners=listeners, lastfm_playcount=playcount,
-            genres=json.loads(g_json) if g_json else [],
-            styles=json.loads(s_json) if s_json else [],
-            mb_tags=json.loads(mb_tags_json) if mb_tags_json else [],
-            mb_relations=json.loads(mb_rels_json) if mb_rels_json else [],
+            genres=safe_json_list(g_json),
+            styles=safe_json_list(s_json),
+            mb_tags=safe_json_list(mb_tags_json),
+            mb_relations=safe_json_list(mb_rels_json),
             already_in_lidarr=False
         )
 
@@ -290,9 +294,9 @@ class ExploreService:
         artists = []
         like_query = f"%{q}%"
         async with self._db.execute(
-            """SELECT id, name, slug, image_url, lastfm_listeners, lastfm_playcount,
-                      (SELECT json_group_array(g.name) FROM genres g JOIN artist_genres ag ON ag.genre_id = g.id WHERE ag.artist_id = artists.id) as genres,
-                      (SELECT json_group_array(s.name) FROM styles s JOIN artist_styles ast ON ast.style_id = s.id WHERE ast.artist_id = artists.id) as styles
+            f"""SELECT id, name, slug, image_url, lastfm_listeners, lastfm_playcount,
+                      {_GENRES_SQL.format(alias='artists')},
+                      {_STYLES_SQL.format(alias='artists')}
                FROM artists WHERE name LIKE ? ORDER BY lastfm_listeners DESC LIMIT 20""",
             (like_query,)
         ) as cursor:
@@ -301,8 +305,8 @@ class ExploreService:
                 artists.append(ArtistSummary(
                     id=row[0], name=row[1], slug=row[2], image_url=row[3],
                     lastfm_listeners=row[4], lastfm_playcount=row[5],
-                    genres=json.loads(g_json) if g_json else [],
-                    styles=json.loads(s_json) if s_json else [],
+                    genres=safe_json_list(g_json),
+                    styles=safe_json_list(s_json),
                     already_in_lidarr=False
                 ))
         
@@ -334,7 +338,7 @@ class ExploreService:
             async for row in cursor:
                 releases.append(ReleaseDetail(
                     id=row[0], title=row[1], year=row[2], release_type=row[3], label=row[4], format=row[5],
-                    cover_url=row[6] or "", genres=json.loads(row[7]) if row[7] else [], styles=json.loads(row[8]) if row[8] else [], credits=[]
+                    cover_url=row[6] or "", genres=safe_json_list(row[7]), styles=safe_json_list(row[8]), credits=[]
                 ))
         return releases
 

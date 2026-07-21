@@ -10,10 +10,8 @@ from uuid import uuid4
 
 import aiosqlite
 
-logger = logging.getLogger(__name__)
-
 from app.cache.service import CacheService
-from app.common.utils import parse_llm_json
+from app.common.utils import parse_llm_json, safe_json_dict, safe_json_list
 from app.discogs.service import DiscogsService
 from app.discovery.schemas import DiscoveryBatch, DiscoveryCard
 from app.lastfm.service import LastfmService
@@ -21,6 +19,8 @@ from app.lidarr.service import LidarrService
 from app.llm.base import LLMProvider
 from app.llm.prompts import build_system_prompt
 from app.musicbrainz.service import MusicBrainzService
+
+logger = logging.getLogger(__name__)
 
 
 class DiscoveryService:
@@ -77,7 +77,7 @@ class DiscoveryService:
                 
         async with self.db.execute("SELECT memory FROM memory_blocks WHERE user_id = ?", (user_id,)) as cursor:
             row = await cursor.fetchone()
-        memory = json.loads(row["memory"]) if row else {}
+        memory = safe_json_dict(row["memory"]) if row else {}
         
         # 2. Get library artist names
         library_names = await self.lidarr.get_library_artist_names()
@@ -272,37 +272,43 @@ class DiscoveryService:
         ) as cursor:
             batch_rows = await cursor.fetchall()
             
-        batches = []
+        if not batch_rows:
+            return []
+
+        batch_ids = [row["id"] for row in batch_rows]
+        placeholders = ','.join('?' * len(batch_ids))
+
+        cards_by_batch: dict[str, list[DiscoveryCard]] = {bid: [] for bid in batch_ids}
+        async with self.db.execute(
+            f"""SELECT batch_id, id, artist_name, genre_tags, era, ai_blurb, why_it_matches,
+                       lastfm_listeners, lastfm_playcount, mb_data, discogs_data, already_in_lidarr
+                FROM discovery_cards WHERE batch_id IN ({placeholders})""",
+            batch_ids
+        ) as c_cursor:
+            async for crow in c_cursor:
+                cards_by_batch[crow["batch_id"]].append(DiscoveryCard(
+                    id=str(crow["id"]),
+                    artist_name=crow["artist_name"],
+                    genre_tags=safe_json_list(crow["genre_tags"]),
+                    era=crow["era"],
+                    ai_blurb=crow["ai_blurb"],
+                    why_it_matches=crow["why_it_matches"],
+                    lastfm_listeners=crow["lastfm_listeners"],
+                    lastfm_playcount=crow["lastfm_playcount"],
+                    mb_data=safe_json_dict(crow["mb_data"]),
+                    discogs_data=safe_json_dict(crow["discogs_data"]),
+                    already_in_lidarr=bool(crow["already_in_lidarr"])
+                ))
+
+        batches: list[DiscoveryBatch] = []
         for row in batch_rows:
-            batch_id = row["id"]
             created_at = row["created_at"]
-            
-            cards = []
-            async with self.db.execute(
-                """SELECT id, artist_name, genre_tags, era, ai_blurb, why_it_matches,
-                          lastfm_listeners, lastfm_playcount, mb_data, discogs_data, already_in_lidarr
-                   FROM discovery_cards WHERE batch_id = ?""",
-                (batch_id,)
-            ) as c_cursor:
-                card_rows = await c_cursor.fetchall()
-                for crow in card_rows:
-                    cards.append(DiscoveryCard(
-                        id=str(crow["id"]),
-                        artist_name=crow["artist_name"],
-                        genre_tags=json.loads(crow["genre_tags"]) if crow["genre_tags"] else [],
-                        era=crow["era"],
-                        ai_blurb=crow["ai_blurb"],
-                        why_it_matches=crow["why_it_matches"],
-                        lastfm_listeners=crow["lastfm_listeners"],
-                        lastfm_playcount=crow["lastfm_playcount"],
-                        mb_data=json.loads(crow["mb_data"]) if crow["mb_data"] else None,
-                        discogs_data=json.loads(crow["discogs_data"]) if crow["discogs_data"] else None,
-                        already_in_lidarr=bool(crow["already_in_lidarr"])
-                    ))
-                    
             if isinstance(created_at, str):
                 created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
-                
-            batches.append(DiscoveryBatch(id=str(batch_id), created_at=created_at, cards=cards))
+            batches.append(DiscoveryBatch(
+                id=str(row["id"]),
+                created_at=created_at,
+                cards=cards_by_batch[row["id"]]
+            ))
             
         return batches

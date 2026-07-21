@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, timezone
 import aiosqlite
 
 from app.common.utils import slugify
+from app.config import settings
 from app.lastfm.client import LastfmClient
 
 logger = logging.getLogger(__name__)
@@ -23,7 +24,6 @@ class SeedService:
     async def seed_if_needed(self) -> None:
         """Seed genres and styles if the database is empty or data is old."""
         if await self._needs_refresh():
-            from app.config import settings
             self._lastfm = LastfmClient(api_key=settings.lastfm_api_key)
             try:
                 logger.info("Seeding genre taxonomy...")

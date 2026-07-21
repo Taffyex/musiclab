@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import httpx
 
-from app.common.exceptions import ExternalAPIError
 from app.common.http import BaseHttpClient
 
 
@@ -17,6 +16,8 @@ class LidarrClient(BaseHttpClient):
             artists = await client.get_artists()
     """
 
+    service_name: str = "Lidarr"
+
     def __init__(self, base_url: str, api_key: str) -> None:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
@@ -25,15 +26,6 @@ class LidarrClient(BaseHttpClient):
             timeout=30.0,
             headers={"X-Api-Key": self.api_key, "Accept": "application/json"},
         )
-
-    async def _request(self, method: str, path: str, **kwargs: object) -> dict:
-        """Send a request to the Lidarr API."""
-        try:
-            response = await self._http.request(method, path, **kwargs)
-            response.raise_for_status()
-            return response.json()
-        except httpx.HTTPError as e:
-            raise ExternalAPIError(service="Lidarr", message=str(e)) from e
 
     async def get_artists(self) -> list[dict]:
         return await self._request("GET", "/api/v1/artist")

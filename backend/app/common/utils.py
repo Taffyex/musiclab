@@ -84,6 +84,20 @@ async def retry_async(
     raise last_exc
 
 
+def safe_json_list(raw: str | None) -> list[Any]:
+    """Parse *raw* as a JSON list, returning ``[]`` on ``None`` or empty."""
+    if not raw:
+        return []
+    return json.loads(raw)
+
+
+def safe_json_dict(raw: str | None) -> dict[str, Any] | None:
+    """Parse *raw* as a JSON dict, returning ``None`` on ``None`` or empty."""
+    if not raw:
+        return None
+    return json.loads(raw)
+
+
 def parse_llm_json(content: str) -> list[dict[str, Any]]:
     """Parse JSON from an LLM response, stripping markdown fences if present.
 
