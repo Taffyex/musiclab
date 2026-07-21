@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import httpx
 import json
 import logging
 from datetime import datetime, timedelta, timezone
@@ -80,7 +81,9 @@ class ExploreService:
         direction = "ASC" if filters.sort_order == "asc" else "DESC"
 
         query = f"""
-            SELECT a.id, a.name, a.slug, a.image_url, a.lastfm_listeners, a.lastfm_playcount, '[]' as genres, '[]' as styles
+            SELECT a.id, a.name, a.slug, a.image_url, a.lastfm_listeners, a.lastfm_playcount,
+                   (SELECT json_group_array(g.name) FROM genres g JOIN artist_genres ag ON ag.genre_id = g.id WHERE ag.artist_id = a.id) as genres,
+                   (SELECT json_group_array(s.name) FROM styles s JOIN artist_styles ast ON ast.style_id = s.id WHERE ast.artist_id = a.id) as styles
             FROM artists a
             JOIN {join_table} j ON a.id = j.artist_id
             WHERE j.{join_col} = ?
@@ -122,7 +125,6 @@ class ExploreService:
         lf_task = asyncio.create_task(self._lastfm.get_artist_info(artist_name))
         mb_task = asyncio.create_task(self._musicbrainz.search_artist(artist_name))
         
-        import httpx
         try:
             lf_info = await lf_task
         except (httpx.HTTPError, ExternalAPIError):
@@ -130,7 +132,7 @@ class ExploreService:
             lf_info = {}
         try:
             mb_search = await mb_task
-            mb_id = mb_search[0]["id"] if mb_search else None
+            mb_id = mb_search[0].get("id") if mb_search else None
             mb_info = await self._musicbrainz.get_artist_with_full_relations(mb_id) if mb_id else {}
         except (httpx.HTTPError, ExternalAPIError):
             logger.warning("Failed to fetch mb info for %s", artist_name)
@@ -180,8 +182,19 @@ class ExploreService:
                     mb_tags, mb_relations, fetched_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(slug) DO UPDATE SET
-                    bio=excluded.bio, lastfm_listeners=excluded.lastfm_listeners,
-                    lastfm_playcount=excluded.lastfm_playcount, fetched_at=excluded.fetched_at
+                    discogs_id=excluded.discogs_id,
+                    mbid=excluded.mbid,
+                    bio=excluded.bio,
+                    country=excluded.country,
+                    begin_date=excluded.begin_date,
+                    end_date=excluded.end_date,
+                    artist_type=excluded.artist_type,
+                    image_url=excluded.image_url,
+                    lastfm_listeners=excluded.lastfm_listeners,
+                    lastfm_playcount=excluded.lastfm_playcount,
+                    mb_tags=excluded.mb_tags,
+                    mb_relations=excluded.mb_relations,
+                    fetched_at=excluded.fetched_at
                 """,
                 (
                     artist_name, slug, dc_id, mb_id, bio, country, begin_date, end_date,
@@ -212,7 +225,9 @@ class ExploreService:
         query = """
             SELECT id, name, slug, bio, discogs_profile, country, begin_date, end_date,
                    artist_type, image_url, lastfm_listeners, lastfm_playcount,
-                   '[]' as genres, '[]' as styles, mb_tags, mb_relations, fetched_at
+                   (SELECT json_group_array(g.name) FROM genres g JOIN artist_genres ag ON ag.genre_id = g.id WHERE ag.artist_id = artists.id) as genres,
+                   (SELECT json_group_array(s.name) FROM styles s JOIN artist_styles ast ON ast.style_id = s.id WHERE ast.artist_id = artists.id) as styles,
+                   mb_tags, mb_relations, fetched_at
             FROM artists WHERE slug = ?
         """
         async with self._db.execute(query, (artist_slug,)) as cursor:
@@ -267,16 +282,36 @@ class ExploreService:
         artists = []
         like_query = f"%{q}%"
         async with self._db.execute(
-            """SELECT id, name, slug, image_url, lastfm_listeners, lastfm_playcount, '[]' as genres, '[]' as styles
+            """SELECT id, name, slug, image_url, lastfm_listeners, lastfm_playcount,
+                      (SELECT json_group_array(g.name) FROM genres g JOIN artist_genres ag ON ag.genre_id = g.id WHERE ag.artist_id = artists.id) as genres,
+                      (SELECT json_group_array(s.name) FROM styles s JOIN artist_styles ast ON ast.style_id = s.id WHERE ast.artist_id = artists.id) as styles
                FROM artists WHERE name LIKE ? ORDER BY lastfm_listeners DESC LIMIT 20""",
             (like_query,)
         ) as cursor:
             async for row in cursor:
+                g_json, s_json = row[6], row[7]
                 artists.append(ArtistSummary(
                     id=row[0], name=row[1], slug=row[2], image_url=row[3],
                     lastfm_listeners=row[4], lastfm_playcount=row[5],
-                    genres=[], styles=[], already_in_lidarr=False
+                    genres=json.loads(g_json) if g_json else [],
+                    styles=json.loads(s_json) if s_json else [],
+                    already_in_lidarr=False
                 ))
+        
+        if not artists:
+            try:
+                mb_search = await self._musicbrainz.search_artist(q, limit=5)
+                for item in mb_search:
+                    name = item.get("name")
+                    if name:
+                        artists.append(ArtistSummary(
+                            id=0, name=name, slug=slugify(name), image_url="",
+                            lastfm_listeners=0, lastfm_playcount=0,
+                            genres=[], styles=[], already_in_lidarr=False
+                        ))
+            except Exception:
+                pass
+                
         return artists
 
     async def get_artist_releases(self, artist_slug: str) -> list[ReleaseDetail]:

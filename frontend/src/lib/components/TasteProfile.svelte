@@ -35,7 +35,7 @@
 			<div class="section">
 				<h3 class="text-lg font-medium text-secondary mb-sm">Top Genres</h3>
 				<div class="flex gap-sm wrap">
-					{#each profile.top_genres as genre}
+					{#each profile.top_tags as genre}
 						<span class="tag">{genre.name}</span>
 					{/each}
 				</div>

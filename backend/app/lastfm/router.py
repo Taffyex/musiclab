@@ -16,10 +16,16 @@ from app.cache.service import CacheService
 from app.lastfm.service import LastfmService
 import aiosqlite
 
-async def get_lastfm_service(db: aiosqlite.Connection = Depends(get_db)) -> LastfmService:
+from collections.abc import AsyncGenerator
+
+async def get_lastfm_service(db: aiosqlite.Connection = Depends(get_db)) -> AsyncGenerator[LastfmService, None]:
     client = LastfmClient(api_key=settings.lastfm_api_key)
     cache = CacheService(db=db)
-    return LastfmService(client=client, cache=cache, db=db)
+    service = LastfmService(client=client, cache=cache, db=db)
+    try:
+        yield service
+    finally:
+        await client.close()
 
 @router.get("/profile", response_model=LastfmProfile)
 async def get_profile(

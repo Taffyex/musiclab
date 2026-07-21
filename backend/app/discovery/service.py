@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import aiosqlite
 import logging
 
@@ -243,7 +244,6 @@ class DiscoveryService:
         Returns:
             A dict with keys ``"lastfm"``, ``"discogs"``, ``"musicbrainz"``.
         """
-        import asyncio
         lastfm_data, discogs_data, mb_data = await asyncio.gather(
             self.lastfm.client.get_artist_info(artist_name),
             self.discogs.enrich_artist(artist_name),

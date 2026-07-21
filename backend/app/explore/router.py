@@ -20,12 +20,21 @@ from app.musicbrainz.client import MusicBrainzClient
 
 router = APIRouter()
 
-def get_explore_service(db: aiosqlite.Connection = Depends(get_db)) -> ExploreService:
+from collections.abc import AsyncGenerator
+
+async def get_explore_service(db: aiosqlite.Connection = Depends(get_db)) -> AsyncGenerator[ExploreService, None]:
     """Dependency for ExploreService."""
     discogs = DiscogsClient(token=settings.discogs_token)
     lastfm = LastfmClient(api_key=settings.lastfm_api_key)
     mb = MusicBrainzClient()
-    return ExploreService(db, discogs, lastfm, mb)
+    
+    service = ExploreService(db, discogs, lastfm, mb)
+    try:
+        yield service
+    finally:
+        await discogs.close()
+        await lastfm.close()
+        await mb.close()
 
 
 @router.get("/genres")

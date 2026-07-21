@@ -117,12 +117,13 @@ export interface MemoryBlock {
 // --- Settings ---
 export interface AppSettings {
 	lastfm_username: string;
+	lastfm_api_key: string;
 	lidarr_url: string;
 	lidarr_api_key: string;
-	llm_provider: 'openai' | 'anthropic' | 'ollama';
-	llm_api_key: string;
-	llm_model: string;
-	theme: 'light' | 'dark';
+	llm_provider: 'openai' | 'anthropic' | 'ollama' | 'deepseek' | string;
+	anthropic_api_key: string;
+	openai_api_key: string;
+	deepseek_api_key: string;
 }
 
 // --- API ---

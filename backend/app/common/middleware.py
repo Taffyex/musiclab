@@ -93,13 +93,8 @@ async def rate_limit_middleware(request: Request, call_next):  # noqa: ANN001
         now = time.time()
         
         # Clean up old timestamps for this IP
-        timestamps = _rate_limit_store.get(client_ip, [])
+        timestamps = _rate_limit_store[client_ip]
         timestamps = [t for t in timestamps if now - t < RATE_LIMIT_WINDOW]
-        
-        if not timestamps:
-            _rate_limit_store.pop(client_ip, None)
-        else:
-            _rate_limit_store[client_ip] = timestamps
         
         if len(timestamps) >= RATE_LIMIT_MAX_REQUESTS:
             return JSONResponse(
@@ -108,7 +103,8 @@ async def rate_limit_middleware(request: Request, call_next):  # noqa: ANN001
                 headers={"Retry-After": str(int(RATE_LIMIT_WINDOW))}
             )
             
-        _rate_limit_store[client_ip].append(now)
+        timestamps.append(now)
+        _rate_limit_store[client_ip] = timestamps
 
     response = await call_next(request)
     return response

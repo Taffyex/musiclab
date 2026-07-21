@@ -39,8 +39,6 @@ class CacheService:
             return None
             
         if row["expires_at"] < time.time():
-            await self.db.execute("DELETE FROM cache_entries WHERE key = ?", (key,))
-            await self.db.commit()
             return None
             
         return json.loads(row["value"])
