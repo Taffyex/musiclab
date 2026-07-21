@@ -7,6 +7,8 @@ or environment variables at startup.
 
 from __future__ import annotations
 
+import warnings
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import field_validator
 
@@ -25,7 +27,6 @@ class Settings(BaseSettings):
     @classmethod
     def validate_secret_key(cls, v: str) -> str:
         if v == "change-me-to-a-random-string":
-            import warnings
             warnings.warn("Using default app_secret_key. Must change app_secret_key from default for production.")
         return v
 

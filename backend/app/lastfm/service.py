@@ -62,3 +62,6 @@ class LastfmService:
         await self.cache.set(cache_key, profile.model_dump(), ttl_seconds=3600)
         return profile
 
+    async def enrich_artist(self, artist_name: str) -> dict:
+        """Fetch basic artist info for discovery enrichment."""
+        return await self.client.get_artist_info(artist_name)

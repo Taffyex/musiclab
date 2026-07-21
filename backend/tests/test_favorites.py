@@ -71,4 +71,4 @@ async def test_favorites_crud():
         response = await ac.get("/api/explore/favorites", cookies=cookies)
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 0
+        assert len(data["artists"]) == 0

@@ -2,21 +2,20 @@
 
 from __future__ import annotations
 
+import aiosqlite
+from collections.abc import AsyncGenerator
 from fastapi import APIRouter, Depends
 
+from app.auth.dependencies import get_current_user
+from app.cache.service import CacheService
+from app.config import settings
+from app.database import get_db
+from app.lastfm.client import LastfmClient
 from app.lastfm.schemas import LastfmProfile
+from app.lastfm.service import LastfmService
 
 router = APIRouter()
 
-from app.auth.dependencies import get_current_user
-from app.database import get_db
-from app.config import settings
-from app.lastfm.client import LastfmClient
-from app.cache.service import CacheService
-from app.lastfm.service import LastfmService
-import aiosqlite
-
-from collections.abc import AsyncGenerator
 
 async def get_lastfm_service(db: aiosqlite.Connection = Depends(get_db)) -> AsyncGenerator[LastfmService, None]:
     client = LastfmClient(api_key=settings.lastfm_api_key)

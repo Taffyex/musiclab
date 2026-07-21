@@ -17,7 +17,7 @@ async def setup_db():
         await db.execute("DELETE FROM users")
         await db.execute(
             "INSERT INTO users (username, password_hash) VALUES (?, ?)",
-            ("testuser", service.get_password_hash("testpass"))
+            ("testuser", service.hash_password("testpass"))
         )
         await db.commit()
     yield

@@ -22,3 +22,4 @@ data/
 .idea/
 *.swp
 *.swo
+backend/debug.py

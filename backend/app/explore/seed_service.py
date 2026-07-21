@@ -19,16 +19,19 @@ class SeedService:
 
     def __init__(self, db: aiosqlite.Connection) -> None:
         self._db = db
-        from app.config import settings
-        self._lastfm = LastfmClient(api_key=settings.lastfm_api_key)
 
     async def seed_if_needed(self) -> None:
         """Seed genres and styles if the database is empty or data is old."""
         if await self._needs_refresh():
-            logger.info("Seeding genre taxonomy...")
-            await self.seed_genres()
-            await self.supplement_with_lastfm_tags()
-            logger.info("Genre taxonomy seeded successfully.")
+            from app.config import settings
+            self._lastfm = LastfmClient(api_key=settings.lastfm_api_key)
+            try:
+                logger.info("Seeding genre taxonomy...")
+                await self.seed_genres()
+                await self.supplement_with_lastfm_tags()
+                logger.info("Genre taxonomy seeded successfully.")
+            finally:
+                await self._lastfm.close()
 
     async def _needs_refresh(self) -> bool:
         """Check if taxonomy is older than 7 days."""

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import aiosqlite
 
+from collections.abc import AsyncGenerator
 from fastapi import APIRouter, Depends, Query
 
 from app.auth.dependencies import get_current_user
@@ -23,8 +24,6 @@ from app.musicbrainz.client import MusicBrainzClient
 from app.musicbrainz.service import MusicBrainzService
 
 router = APIRouter()
-
-from collections.abc import AsyncGenerator
 
 async def get_discovery_service(
     db: aiosqlite.Connection = Depends(get_db),

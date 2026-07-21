@@ -77,7 +77,13 @@ class ExploreService:
                 raise NotFoundError(f"{label} {slug} not found")
             taxonomy_id = row[0]
 
-        column = {"listeners": "a.lastfm_listeners", "scrobbles": "a.lastfm_playcount", "name": "a.name"}.get(filters.sort_by, "a.lastfm_listeners")
+        valid_columns = {"listeners": "a.lastfm_listeners", "scrobbles": "a.lastfm_playcount", "name": "a.name"}
+        if filters.sort_by not in valid_columns:
+            raise ValueError(f"Invalid sort_by: {filters.sort_by}")
+        column = valid_columns[filters.sort_by]
+        
+        if filters.sort_order not in ("asc", "desc"):
+            raise ValueError(f"Invalid sort_order: {filters.sort_order}")
         direction = "ASC" if filters.sort_order == "asc" else "DESC"
 
         query = f"""
@@ -244,7 +250,8 @@ class ExploreService:
         fetched_time = datetime.fromisoformat(fetched.replace('Z', '+00:00'))
         if datetime.now(timezone.utc) - fetched_time > timedelta(days=1):
             # Refresh async
-            asyncio.create_task(self.enrich_and_cache_artist(name))
+            task = asyncio.create_task(self.enrich_and_cache_artist(name))
+            task.add_done_callback(lambda t: logger.exception("Background enrich failed") if t.exception() else None)
             
         return ArtistDetail(
             id=a_id, name=name, slug=slug, bio=bio, discogs_profile=dp,
@@ -274,7 +281,8 @@ class ExploreService:
                     lastfm_listeners=int(s.get("match", 0) * 1000) # mock
                 ))
             return res
-        except Exception:
+        except (httpx.HTTPError, ExternalAPIError):
+            logger.exception("Failed to fetch similar artists for %s", artist_slug)
             return []
 
     async def search_artists(self, q: str) -> list[ArtistSummary]:

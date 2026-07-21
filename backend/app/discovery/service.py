@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 import asyncio
-import aiosqlite
+import json
 import logging
+from datetime import datetime, timezone
+from uuid import uuid4
+
+import aiosqlite
 
 logger = logging.getLogger(__name__)
 
@@ -17,10 +21,6 @@ from app.lidarr.service import LidarrService
 from app.llm.base import LLMProvider
 from app.llm.prompts import build_system_prompt
 from app.musicbrainz.service import MusicBrainzService
-
-import json
-from datetime import datetime, timezone
-from uuid import uuid4
 
 
 class DiscoveryService:
@@ -245,7 +245,7 @@ class DiscoveryService:
             A dict with keys ``"lastfm"``, ``"discogs"``, ``"musicbrainz"``.
         """
         lastfm_data, discogs_data, mb_data = await asyncio.gather(
-            self.lastfm.client.get_artist_info(artist_name),
+            self.lastfm.enrich_artist(artist_name),
             self.discogs.enrich_artist(artist_name),
             self.musicbrainz.enrich_artist(artist_name),
             return_exceptions=True
@@ -300,7 +300,7 @@ class DiscoveryService:
                         already_in_lidarr=bool(crow["already_in_lidarr"])
                     ))
                     
-            if type(created_at) == str:
+            if isinstance(created_at, str):
                 created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
                 
             batches.append(DiscoveryBatch(id=str(batch_id), created_at=created_at, cards=cards))

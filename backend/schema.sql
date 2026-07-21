@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     username      TEXT    UNIQUE NOT NULL,
     password_hash TEXT    NOT NULL,
     lastfm_username TEXT,
-    llm_provider  TEXT    DEFAULT 'anthropic',
+    llm_provider  TEXT    DEFAULT 'openai',
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

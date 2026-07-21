@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import aiosqlite
+from collections.abc import AsyncGenerator
 from fastapi import APIRouter, Depends, Query
 from typing import Any
 
@@ -19,8 +20,6 @@ from app.lastfm.client import LastfmClient
 from app.musicbrainz.client import MusicBrainzClient
 
 router = APIRouter()
-
-from collections.abc import AsyncGenerator
 
 async def get_explore_service(db: aiosqlite.Connection = Depends(get_db)) -> AsyncGenerator[ExploreService, None]:
     """Dependency for ExploreService."""

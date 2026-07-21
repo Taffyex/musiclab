@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import time
+from collections import defaultdict
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
@@ -77,10 +80,6 @@ def register_error_handlers(app: FastAPI) -> None:
 # ---------------------------------------------------------------------------
 
 
-import time
-from collections import defaultdict
-from fastapi.responses import JSONResponse
-
 # Simple in-memory sliding window rate limiter
 _rate_limit_store: dict[str, list[float]] = defaultdict(list)
 RATE_LIMIT_WINDOW = 60.0  # seconds
@@ -96,6 +95,11 @@ async def rate_limit_middleware(request: Request, call_next):  # noqa: ANN001
         timestamps = _rate_limit_store[client_ip]
         timestamps = [t for t in timestamps if now - t < RATE_LIMIT_WINDOW]
         
+        if not timestamps:
+            _rate_limit_store.pop(client_ip, None)
+        else:
+            _rate_limit_store[client_ip] = timestamps
+            
         if len(timestamps) >= RATE_LIMIT_MAX_REQUESTS:
             return JSONResponse(
                 status_code=429,

@@ -120,7 +120,7 @@ export interface AppSettings {
 	lastfm_api_key: string;
 	lidarr_url: string;
 	lidarr_api_key: string;
-	llm_provider: 'openai' | 'anthropic' | 'ollama' | 'deepseek' | string;
+	llm_provider: 'openai' | 'deepseek';
 	anthropic_api_key: string;
 	openai_api_key: string;
 	deepseek_api_key: string;

@@ -9,8 +9,7 @@
 		lastfm_api_key: '',
 		lidarr_url: '',
 		lidarr_api_key: '',
-		llm_provider: 'anthropic',
-		anthropic_api_key: '',
+		llm_provider: 'openai',
 		openai_api_key: '',
 		deepseek_api_key: ''
 	});

@@ -11,6 +11,8 @@ import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
+import aiosqlite
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -37,8 +39,6 @@ from app.settings.router import router as settings_router
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Initialize resources on startup and clean up on shutdown."""
     await init_db()
-    
-    import aiosqlite
     async with aiosqlite.connect(DB_PATH) as db:
         seed_service = SeedService(db)
         await seed_service.seed_if_needed()

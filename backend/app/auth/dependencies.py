@@ -7,6 +7,8 @@ token from an HTTP-only cookie, returning the authenticated user dict.
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from fastapi import Cookie, Depends, HTTPException, status
 
 import aiosqlite
@@ -34,8 +36,6 @@ async def get_current_user(
             detail="Not authenticated",
         )
 
-    from datetime import datetime, timezone
-    
     async with db.execute(
         "SELECT u.id, u.username, u.lastfm_username, u.llm_provider, s.expires_at "
         "FROM sessions s JOIN users u ON s.user_id = u.id "
