@@ -1,5 +1,5 @@
 import { writable, derived } from 'svelte/store';
-import type { DiscoveryBatch, User, LastfmProfile, UserFavorites, FavoriteItem } from '$lib/types';
+import type { DiscoveryBatch, User, LastfmProfile, UserFavorites, FavoriteItem, TrackSummary } from '$lib/types';
 // User Store
 function createUserStore() {
 	const { subscribe, set, update } = writable<User | null>(null);
@@ -7,6 +7,7 @@ function createUserStore() {
 	return {
 		subscribe,
 		set,
+		update,
 		login: (userData: User) => set(userData),
 		logout: () => set(null)
 	};
@@ -86,3 +87,10 @@ function createFavoritesStore() {
 	};
 }
 export const favoritesStore = createFavoritesStore();
+
+// Track Modal Store
+export interface TrackModalData {
+	track: TrackSummary;
+	artistName: string;
+}
+export const trackModalStore = writable<TrackModalData | null>(null);

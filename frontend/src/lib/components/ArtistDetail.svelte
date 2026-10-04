@@ -41,7 +41,7 @@
 				<p class="text-sm text-secondary">Era: {artist.era}</p>
 			{/if}
 			<div class="tags flex gap-xs wrap mt-sm">
-				{#each artist.genre_tags as tag}
+				{#each artist.genre_tags as tag (tag)}
 					<span class="tag">{tag}</span>
 				{/each}
 			</div>
@@ -134,15 +134,8 @@
 </div>
 
 <style>
-	.gap-xl { gap: var(--space-xl); }
-	.mb-xs { margin-bottom: var(--space-xs); }
-	.mb-lg { margin-bottom: var(--space-lg); }
-	.items-center { align-items: center; }
 	.border-b { border-bottom: 1px solid var(--border); }
 	.pb-sm { padding-bottom: var(--space-sm); }
-	.py-2xl { padding: var(--space-2xl) 0; }
-	.leading-relaxed { line-height: 1.6; }
-	.capitalize { text-transform: capitalize; }
 	.max-w-md { max-width: 400px; margin-bottom: var(--space-xl); }
 
 	.info-grid {
@@ -150,8 +143,8 @@
 	}
 
 	.success-badge {
-		background: rgba(46, 204, 113, 0.1);
-		color: #2ecc71;
+		background: rgba(0, 184, 148, 0.1);
+		color: var(--success);
 		padding: 8px 16px;
 		border-radius: var(--radius-md);
 		font-weight: bold;

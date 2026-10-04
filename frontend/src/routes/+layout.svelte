@@ -3,6 +3,7 @@
 	import { themeStore, userStore, favoritesStore } from '$lib/stores';
 	import { apiClient } from '$lib/api';
 	import Navbar from '$lib/components/Navbar.svelte';
+	import TrackModal from '$lib/components/TrackModal.svelte';
 	import '../app.css';
 
 	let { children } = $props();
@@ -28,6 +29,7 @@
 	<main class="container">
 		{@render children()}
 	</main>
+	<TrackModal />
 </div>
 
 <style>

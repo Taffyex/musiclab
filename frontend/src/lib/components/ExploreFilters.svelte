@@ -10,63 +10,99 @@
 	
 	const decades = ["All", "2020s", "2010s", "2000s", "1990s", "1980s", "1970s", "1960s"];
 	
-	function handleChange(e: Event) {
+	function handleDecadeChange(e: Event) {
+		const target = e.target as HTMLSelectElement;
+		const val = target.value;
+		filters.decade = (!val || val === 'All' || val === 'null') ? undefined : val;
 		onChange(filters);
 	}
 </script>
 
-<div class="filters-panel flex wrap items-center gap-md py-md">
-	<div class="filter-group">
-		<label for="sort_by" class="text-sm font-medium">Sort By:</label>
-		<select id="sort_by" bind:value={filters.sort_by} onchange={handleChange}>
-			<option value="listeners">Listeners</option>
-			<option value="scrobbles">Scrobbles</option>
-			<option value="name">Name</option>
-		</select>
-	</div>
-	
-	<div class="filter-group">
-		<label for="sort_order" class="text-sm font-medium">Order:</label>
-		<select id="sort_order" bind:value={filters.sort_order} onchange={handleChange}>
-			<option value="desc">Descending</option>
-			<option value="asc">Ascending</option>
-		</select>
-	</div>
-	
-	<div class="filter-group">
-		<label for="decade" class="text-sm font-medium">Decade:</label>
-		<select id="decade" bind:value={filters.decade} onchange={handleChange}>
-			{#each decades as decade}
-				<option value={decade === "All" ? null : decade}>{decade}</option>
-			{/each}
-		</select>
+<div class="filters-panel">
+	<div class="filter-controls">
+		<div class="filter-group">
+			<span class="filter-label">Sort by:</span>
+			<div class="select-wrapper">
+				<select id="sort_by" bind:value={filters.sort_by} onchange={() => onChange(filters)}>
+					<option value="listeners">👥 Listeners</option>
+					<option value="scrobbles">▶ Playcount</option>
+					<option value="name">🔤 Name (A-Z)</option>
+				</select>
+			</div>
+		</div>
+		
+		<div class="filter-group">
+			<span class="filter-label">Order:</span>
+			<div class="select-wrapper">
+				<select id="sort_order" bind:value={filters.sort_order} onchange={() => onChange(filters)}>
+					<option value="desc">High to Low ↓</option>
+					<option value="asc">Low to High ↑</option>
+				</select>
+			</div>
+		</div>
+		
+		<div class="filter-group">
+			<span class="filter-label">Decade:</span>
+			<div class="select-wrapper">
+				<select id="decade" value={filters.decade ?? 'All'} onchange={handleDecadeChange}>
+					{#each decades as decade (decade)}
+						<option value={decade}>{decade === 'All' ? 'All Eras' : decade}</option>
+					{/each}
+				</select>
+			</div>
+		</div>
 	</div>
 </div>
 
 <style>
 	.filters-panel {
-		background: var(--bg-surface, #1e1e2e);
-		border-radius: var(--radius-md, 8px);
-		padding: 1rem;
-		border: 1px solid var(--border-color, #333);
+		display: flex;
+		align-items: center;
+		justify-content: flex-start;
+	}
+
+	.filter-controls {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 1rem;
 	}
 	
 	.filter-group {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
+		gap: 0.4rem;
+	}
+
+	.filter-label {
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: var(--text-secondary);
+	}
+
+	.select-wrapper {
+		position: relative;
 	}
 	
 	select {
-		background: var(--bg-input, #2a2a3e);
-		color: var(--text-primary, #eee);
-		border: 1px solid var(--border-color, #444);
-		border-radius: var(--radius-sm, 4px);
-		padding: 0.25rem 0.5rem;
+		background: var(--bg-secondary);
+		color: var(--text);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
+		padding: 0.35rem 0.65rem;
+		font-size: 0.825rem;
+		font-weight: 500;
 		outline: none;
+		cursor: pointer;
+		transition: all 0.15s ease;
 	}
 	
+	select:hover {
+		border-color: var(--accent);
+	}
+
 	select:focus {
-		border-color: var(--accent, #6c5ce7);
+		border-color: var(--accent);
+		box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.2);
 	}
 </style>

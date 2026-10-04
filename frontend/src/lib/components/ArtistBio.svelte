@@ -7,20 +7,19 @@
 	let expanded = $state(false);
 	
 	function stripHtml(html: string) {
-		let tmp = document.createElement("DIV");
-		tmp.innerHTML = html;
-		return tmp.textContent || tmp.innerText || "";
+		if (!html) return '';
+		return html.replace(/<[^>]*>/g, '').trim();
 	}
 </script>
 
 {#if bio}
-	<div class="artist-bio mt-lg">
+	<div class="artist-bio card mt-lg">
 		<h3 class="font-bold text-lg mb-sm">Biography</h3>
 		<div class="bio-content" class:expanded>
 			{stripHtml(bio)}
 		</div>
 		{#if bio.length > 300}
-			<button class="expand-btn mt-sm text-accent" onclick={() => expanded = !expanded}>
+			<button class="expand-btn mt-sm" onclick={() => expanded = !expanded}>
 				{expanded ? 'Read Less' : 'Read More'}
 			</button>
 		{/if}
@@ -29,20 +28,21 @@
 
 <style>
 	.artist-bio {
-		background: var(--bg-surface, #1e1e2e);
+		background: var(--card-bg);
 		padding: 1.5rem;
-		border-radius: var(--radius-md, 8px);
-		border: 1px solid var(--border-color, #333);
+		border-radius: var(--radius-md);
+		border: 1px solid var(--border);
 	}
 	
 	.bio-content {
-		color: var(--text-secondary, #aaa);
+		color: var(--text-secondary);
 		line-height: 1.6;
 		white-space: pre-line;
 	}
 	
 	.bio-content:not(.expanded) {
 		display: -webkit-box;
+		line-clamp: 4;
 		-webkit-line-clamp: 4;
 		-webkit-box-orient: vertical;  
 		overflow: hidden;
@@ -51,6 +51,7 @@
 	.expand-btn {
 		background: none;
 		border: none;
+		color: var(--accent);
 		cursor: pointer;
 		font-weight: bold;
 		padding: 0;

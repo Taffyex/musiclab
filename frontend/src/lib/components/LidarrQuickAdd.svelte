@@ -65,7 +65,7 @@
 			<div class="form-group">
 				<label for="profile" class="text-xs">Quality Profile</label>
 				<select id="profile" bind:value={selectedProfile} class="select-sm">
-					{#each profiles as profile}
+					{#each profiles as profile (profile.id)}
 						<option value={profile.id}>{profile.name}</option>
 					{/each}
 				</select>
@@ -73,7 +73,7 @@
 			<div class="form-group mt-xs">
 				<label for="folder" class="text-xs">Root Folder</label>
 				<select id="folder" bind:value={selectedFolder} class="select-sm">
-					{#each rootFolders as folder}
+					{#each rootFolders as folder (folder.path)}
 						<option value={folder.path}>{folder.path}</option>
 					{/each}
 				</select>
@@ -89,62 +89,58 @@
 	}
 	
 	.lidarr-btn {
-		background: var(--accent, #6c5ce7);
-		color: white;
+		background: var(--accent);
+		color: #ffffff;
 		border: none;
 		padding: 0.5rem 1rem;
-		border-radius: var(--radius-sm, 4px);
+		border-radius: var(--radius-sm);
 		cursor: pointer;
 		font-weight: bold;
-		transition: background 0.2s;
+		transition: background var(--transition-fast);
 	}
 	
 	.lidarr-btn:hover:not(:disabled) {
-		background: var(--accent-hover, #5a4bcf);
+		background: var(--accent-hover);
 	}
 	
 	.lidarr-btn.in-library {
-		background: var(--success, #2ecc71);
+		background: var(--success);
 		cursor: default;
 	}
-	
-	.relative { position: relative; }
-	.absolute { position: absolute; }
-	.w-full { width: 100%; }
 	
 	.options-dropdown {
 		top: 100%;
 		left: 0;
-		background: var(--bg-surface, #1e1e2e);
-		border: 1px solid var(--border-color, #444);
-		border-radius: var(--radius-sm, 4px);
+		background: var(--card-bg);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
 		padding: 0.75rem;
 		z-index: 10;
 		min-width: 200px;
-		box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+		box-shadow: var(--shadow-lg);
 	}
 	
 	.select-sm {
 		width: 100%;
-		background: var(--bg-input, #2a2a3e);
-		color: var(--text-primary, #eee);
-		border: 1px solid var(--border-color, #444);
-		border-radius: var(--radius-sm, 4px);
+		background: var(--bg-secondary);
+		color: var(--text);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
 		padding: 0.2rem;
 		font-size: 0.8rem;
 	}
 	
 	.btn-confirm {
-		background: var(--success, #2ecc71);
-		color: white;
+		background: var(--success);
+		color: #ffffff;
 		border: none;
 		padding: 0.3rem;
-		border-radius: var(--radius-sm, 4px);
+		border-radius: var(--radius-sm);
 		cursor: pointer;
 		font-weight: bold;
 	}
 	
 	.btn-confirm:hover {
-		background: #27ae60;
+		opacity: 0.9;
 	}
 </style>

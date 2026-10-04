@@ -50,7 +50,7 @@
 		<div class="credits-panel mt-sm">
 			{#if release.credits && release.credits.length > 0}
 				<ul class="credits-list">
-					{#each release.credits as credit}
+					{#each release.credits as credit (credit.id || credit.entity_slug)}
 						<li>
 							<span class="role">{credit.role}:</span> 
 							<a href="/credit/{credit.entity_slug}" class="entity">{credit.entity_name}</a>
@@ -66,9 +66,9 @@
 
 <style>
 	.release-row {
-		background: var(--bg-app, #12121c);
-		border: 1px solid var(--border-color, #333);
-		border-radius: var(--radius-sm, 4px);
+		background: var(--bg);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
 		padding: 0.5rem 1rem;
 	}
 	
@@ -76,7 +76,7 @@
 		width: 48px;
 		height: 48px;
 		flex-shrink: 0;
-		border-radius: var(--radius-sm, 4px);
+		border-radius: var(--radius-sm);
 		overflow: hidden;
 	}
 	
@@ -89,31 +89,31 @@
 	.cover-placeholder {
 		width: 100%;
 		height: 100%;
-		background: var(--bg-hover, #2a2a3e);
+		background: var(--bg-secondary);
 	}
 	
 	.credits-btn, .lidarr-album-btn {
 		background: none;
-		border: 1px solid var(--border-color, #444);
-		color: var(--text-secondary, #aaa);
+		border: 1px solid var(--border);
+		color: var(--text-secondary);
 		padding: 0.25rem 0.75rem;
-		border-radius: var(--radius-sm, 4px);
+		border-radius: var(--radius-sm);
 		cursor: pointer;
 		font-size: 0.8rem;
 	}
 	
 	.credits-btn:hover {
-		border-color: var(--accent, #6c5ce7);
-		color: var(--accent, #6c5ce7);
+		border-color: var(--accent);
+		color: var(--accent);
 	}
 	
 	.lidarr-album-btn:hover {
-		border-color: var(--success, #2ecc71);
-		color: var(--success, #2ecc71);
+		border-color: var(--success);
+		color: var(--success);
 	}
 	
 	.credits-panel {
-		border-top: 1px solid var(--border-color, #333);
+		border-top: 1px solid var(--border);
 		padding-top: 0.5rem;
 		padding-left: 3rem;
 	}
@@ -129,19 +129,15 @@
 	}
 	
 	.role {
-		color: var(--text-secondary, #aaa);
+		color: var(--text-secondary);
 	}
 	
 	.entity {
-		color: var(--accent, #6c5ce7);
+		color: var(--accent);
 		text-decoration: none;
 	}
 	
 	.entity:hover {
 		text-decoration: underline;
-	}
-	
-	.ml-auto {
-		margin-left: auto;
 	}
 </style>

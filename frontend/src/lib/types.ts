@@ -19,14 +19,14 @@ export interface LoginResponse {
 }
 
 // --- Last.fm Profile ---
+// Mirrors backend `app/lastfm/schemas.py::LastfmProfile`.
 export interface LastfmProfile {
-	username: string;
-	playcount: number;
-	artist_count: number;
 	top_artists: TopArtist[];
+	top_albums: TopAlbum[];
 	top_tags: Array<{ name: string; count: number }>;
 	recent_tracks: RecentTrack[];
-	updated_at: string;
+	loved_tracks: RecentTrack[];
+	weekly_artists: TopArtist[];
 }
 
 export interface TopArtist {
@@ -42,6 +42,15 @@ export interface RecentTrack {
 	album?: string;
 	timestamp?: number;
 	image_url?: string;
+	url?: string;
+}
+
+export interface TopAlbum {
+	name: string;
+	artist: string;
+	playcount: number;
+	url: string;
+	image_url?: string;
 }
 
 // --- Discovery ---
@@ -52,6 +61,7 @@ export interface DiscoveryCard {
 	era: string;
 	ai_blurb: string;
 	why_it_matches: string;
+	image_url?: string;
 	lastfm_listeners?: number | null;
 	lastfm_playcount?: number | null;
 	mb_data?: Record<string, any> | null;
@@ -66,22 +76,22 @@ export interface DiscoveryBatch {
 }
 
 // --- Lidarr ---
+// Mirrors the serialized backend `app/lidarr/schemas.py::LidarrArtist`
+// (snake_case). The raw Lidarr API uses camelCase, but the backend's
+// `get_library()` normalizes it to snake_case.
 export interface LidarrArtist {
 	id: number;
-	artistName: string;
-	foreignArtistId: string;
-	overview?: string;
-	qualityProfileId: number;
-	rootFolderPath: string;
+	name: string;
+	foreign_artist_id: string;
 	monitored: boolean;
-	images?: ArtistImage[];
+	quality_profile_id: number;
+	path: string;
 }
 
-export interface ArtistImage {
-	coverType: string;
-	url: string;
-}
-
+/**
+ * Payload accepted by `apiClient.lidarr.addArtist` — the apiClient maps
+ * these camelCase fields to the backend's snake_case `AddArtistRequest`.
+ */
 export interface AddArtistRequest {
 	artistName: string;
 	foreignArtistId: string;
@@ -137,6 +147,17 @@ export interface Genre { id: number; name: string; slug: string; source: string;
 export interface Style { id: number; name: string; slug: string; genre_id: number; genre_name: string; }
 export interface GenreTree { genre: Genre; styles: Style[]; }
 
+export interface TrackSummary {
+	id: number;
+	title: string;
+	position: number | null;
+	duration_ms: number | null;
+	lastfm_listeners: number | null;
+	lastfm_playcount: number | null;
+	preview_url?: string | null;
+	cover_url?: string;
+}
+
 export interface ArtistSummary {
 	id: number; name: string; slug: string; image_url: string;
 	lastfm_listeners: number | null; lastfm_playcount: number | null;
@@ -147,8 +168,12 @@ export interface ArtistSummary {
 export interface ArtistDetail extends ArtistSummary {
 	bio: string; discogs_profile: string; country: string;
 	begin_date: string; end_date: string; artist_type: string;
+	discogs_id: number | null;
+	mbid: string | null;
 	mb_tags: string[]; mb_relations: MBRelation[];
-	releases: ReleaseDetail[]; similar_artists: ArtistSummary[];
+	releases: ReleaseDetail[];
+	top_tracks: TrackSummary[];
+	similar_artists: ArtistSummary[];
 	lidarr_artist: Record<string, any> | null;
 }
 
@@ -157,6 +182,7 @@ export interface ReleaseDetail {
 	release_type: string; label: string; format: string;
 	cover_url: string; genres: string[]; styles: string[];
 	credits: Credit[];
+	artist_role?: 'primary' | 'secondary' | 'track';
 }
 
 export interface Credit {
@@ -200,3 +226,11 @@ export interface UserFavorites {
 	genres: FavoriteItem[];
 	styles: FavoriteItem[];
 }
+
+export interface RecentArtist {
+	slug: string;
+	name: string;
+	image_url: string;
+	timestamp: number;
+}
+

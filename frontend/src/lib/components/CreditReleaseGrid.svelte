@@ -14,8 +14,8 @@
 	{#if releases.length === 0}
 		<p class="text-secondary">No releases found.</p>
 	{:else}
-		<div class="grid">
-			{#each releases as release}
+		<div class="releases-grid">
+			{#each releases as release (release.release_id)}
 				<div class="release-card">
 					<div class="cover">
 						{#if release.cover_url}
@@ -42,16 +42,16 @@
 </div>
 
 <style>
-	.grid {
+	.releases-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
 		gap: 1.5rem;
 	}
 	
 	.release-card {
-		background: var(--bg-surface, #1e1e2e);
-		border-radius: var(--radius-md, 8px);
-		border: 1px solid var(--border-color, #333);
+		background: var(--card-bg);
+		border-radius: var(--radius-md);
+		border: 1px solid var(--border);
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
@@ -71,7 +71,7 @@
 	.placeholder {
 		width: 100%;
 		height: 100%;
-		background: var(--bg-hover, #2a2a3e);
+		background: var(--bg-secondary);
 	}
 	
 	.info {
@@ -81,14 +81,8 @@
 		gap: 0.25rem;
 	}
 	
-	.truncate {
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-	
 	.artist {
-		color: var(--accent, #6c5ce7);
+		color: var(--accent);
 		text-decoration: none;
 	}
 	

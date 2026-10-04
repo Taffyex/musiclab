@@ -55,8 +55,4 @@
 		box-shadow: var(--shadow);
 		border: 1px solid var(--border);
 	}
-
-	.mb-md { margin-bottom: var(--space-md); }
-	.mb-lg { margin-bottom: var(--space-lg); }
-	.py-xl { padding: var(--space-xl) 0; }
 </style>

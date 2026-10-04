@@ -1,21 +1,21 @@
 <script lang="ts">
 	import { apiClient } from '$lib/api';
-	interface Message {
-		role: 'user' | 'assistant';
-		content: string;
-		timestamp?: string;
-	}
+	import type { ChatMessage } from '$lib/types';
 
 	interface Props {
-		initialMessages?: Message[];
+		initialMessages?: ChatMessage[];
 	}
 
 	let { initialMessages = [] }: Props = $props();
 	
-	let messages: Message[] = $state([...initialMessages]);
+	let messages = $state<ChatMessage[]>([]);
 	let inputMessage = $state('');
 	let isStreaming = $state(false);
 	let chatContainer: HTMLElement;
+
+	$effect.root(() => {
+		messages = initialMessages;
+	});
 
 	function scrollToBottom() {
 		if (chatContainer) {
@@ -42,12 +42,16 @@
 		try {
 			const stream = apiClient.llm.chatMessage(userContent);
 			for await (const chunk of stream) {
-				// Update the last message (the assistant's response)
-				messages[messages.length - 1].content += chunk;
+				// Update the last message reactively
+				messages = messages.map((m, idx) => 
+					idx === messages.length - 1 ? { ...m, content: m.content + chunk } : m
+				);
 			}
 		} catch (error) {
 			console.error('Chat error:', error);
-			messages[messages.length - 1].content += '\n\n[Error communicating with the assistant.]';
+			messages = messages.map((m, idx) => 
+				idx === messages.length - 1 ? { ...m, content: m.content + '\n\n[Error communicating with the assistant.]' } : m
+			);
 		} finally {
 			isStreaming = false;
 			setTimeout(scrollToBottom, 50);

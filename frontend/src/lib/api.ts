@@ -11,6 +11,21 @@ export class ApiError extends Error {
 }
 
 /**
+ * Build a query string from filter params, dropping null/undefined/empty
+ * values so the backend never receives literal "null"/"undefined" strings.
+ */
+function serializeFilters(filters: Record<string, unknown>): string {
+	const params = new URLSearchParams();
+	for (const [key, value] of Object.entries(filters)) {
+		// Skip null/undefined and the string literals that Svelte select
+		// bindings can coerce "null"-valued options into.
+		if (value === null || value === undefined || value === '' || value === 'null' || value === 'undefined') continue;
+		params.append(key, String(value));
+	}
+	return params.toString();
+}
+
+/**
  * Base fetch wrapper that handles common configuration and error throwing
  */
 async function fetchBase(endpoint: string, options: RequestInit = {}) {
@@ -172,17 +187,13 @@ export const apiClient = {
 			const res = await fetchBase('/explore/genres');
 			return res.json();
 		},
-		getGenre: async (slug: string) => {
-			const res = await fetchBase(`/explore/genres/${slug}`);
-			return res.json();
-		},
 		getGenreArtists: async (slug: string, filters: any) => {
-			const query = new URLSearchParams(filters as Record<string, string>).toString();
+			const query = serializeFilters(filters);
 			const res = await fetchBase(`/explore/genres/${slug}/artists?${query}`);
 			return res.json();
 		},
 		getStyleArtists: async (slug: string, filters: any) => {
-			const query = new URLSearchParams(filters as Record<string, string>).toString();
+			const query = serializeFilters(filters);
 			const res = await fetchBase(`/explore/styles/${slug}/artists?${query}`);
 			return res.json();
 		},
@@ -192,6 +203,10 @@ export const apiClient = {
 		},
 		getSimilar: async (slug: string) => {
 			const res = await fetchBase(`/explore/artists/${slug}/similar`);
+			return res.json();
+		},
+		getTracks: async (slug: string, limit: number = 10) => {
+			const res = await fetchBase(`/explore/artists/${slug}/tracks?limit=${limit}`);
 			return res.json();
 		},
 		getReleases: async (slug: string) => {

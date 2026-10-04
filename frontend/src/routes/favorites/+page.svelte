@@ -88,11 +88,11 @@
 		opacity: 0.9;
 	}
 	.genre-tag {
-		background: var(--accent-alpha, rgba(108, 92, 231, 0.2));
-		color: var(--accent, #6c5ce7);
+		background: rgba(108, 92, 231, 0.15);
+		color: var(--accent);
 	}
 	.style-tag {
-		background: var(--bg-hover, #2a2a3e);
-		color: var(--text-primary, #eee);
+		background: var(--bg-secondary);
+		color: var(--text);
 	}
 </style>

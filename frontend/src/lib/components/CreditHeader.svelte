@@ -24,23 +24,23 @@
 
 <style>
 	.credit-header {
-		background: var(--bg-surface, #1e1e2e);
+		background: var(--card-bg);
 		padding: 2rem;
-		border-radius: var(--radius-lg, 12px);
-		border: 1px solid var(--border-color, #333);
+		border-radius: var(--radius-lg);
+		border: 1px solid var(--border);
 		text-align: center;
 		align-items: center;
 	}
 	
 	.badge {
 		padding: 0.2rem 0.6rem;
-		border-radius: 12px;
+		border-radius: var(--radius-full);
 		font-size: 0.8rem;
 		font-weight: bold;
 	}
 	
 	.type-badge {
-		background: var(--accent-alpha, rgba(108, 92, 231, 0.2));
-		color: var(--accent, #6c5ce7);
+		background: rgba(108, 92, 231, 0.15);
+		color: var(--accent);
 	}
 </style>

@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import { requireAuth } from '$lib/utils/auth-guard';
 	import { apiClient } from '$lib/api';
+	import type { User } from '$lib/types';
 
 	let settings = $state({
 		lastfm_username: '',
@@ -40,8 +41,7 @@
 			message = 'Settings saved successfully!';
 			
 			if ($userStore) {
-				$userStore.lastfm_username = settings.lastfm_username;
-				$userStore.llm_provider = settings.llm_provider;
+				userStore.update((u: User | null) => u ? { ...u, lastfm_username: settings.lastfm_username, llm_provider: settings.llm_provider } : null);
 			}
 		} catch (e: unknown) {
 			error = e instanceof Error ? e.message : 'Failed to save';
@@ -61,10 +61,10 @@
 	{:else}
 		<div class="card flex-col gap-md">
 			{#if message}
-				<div class="success-msg text-green-500 mb-sm" style="color: #10B981">{message}</div>
+				<div class="success-msg mb-sm">{message}</div>
 			{/if}
 			{#if error}
-				<div class="error-msg text-red-500 mb-sm" style="color: #EF4444">{error}</div>
+				<div class="error-msg mb-sm">{error}</div>
 			{/if}
 
 			<div>

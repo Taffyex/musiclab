@@ -3,6 +3,7 @@
 	import { discoveryStore } from '$lib/stores';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import { slugify } from '$lib/utils/slugify';
 	import ArtistDetail from '$lib/components/ArtistDetail.svelte';
 	import type { DiscoveryCard } from '$lib/types';
 
@@ -18,8 +19,7 @@
 
 		const found = $discoveryStore.cards.find(c => c.id === id);
 		if (found) {
-			const slug = found.artist_name.toLowerCase().replace(/ /g, '-').replace(/\//g, '-').replace(/,/g, '').replace(/&/g, 'and');
-			goto(`/artist/${slug}`);
+			goto(`/artist/${slugify(found.artist_name)}`);
 		} else {
 			goto('/discover');
 		}

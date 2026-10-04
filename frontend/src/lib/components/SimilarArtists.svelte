@@ -13,7 +13,7 @@
 	<div class="similar-artists mt-lg">
 		<h3 class="font-bold text-lg mb-sm">Similar Artists</h3>
 		<div class="horizontal-scroll">
-			{#each artists as artist}
+			{#each artists as artist (artist.id || artist.slug)}
 				<div class="artist-wrapper">
 					<ArtistCard {artist} />
 				</div>
@@ -24,10 +24,10 @@
 
 <style>
 	.similar-artists {
-		background: var(--bg-surface, #1e1e2e);
+		background: var(--card-bg);
 		padding: 1.5rem;
-		border-radius: var(--radius-md, 8px);
-		border: 1px solid var(--border-color, #333);
+		border-radius: var(--radius-md);
+		border: 1px solid var(--border);
 	}
 	
 	.horizontal-scroll {
@@ -43,7 +43,7 @@
 	}
 	
 	.horizontal-scroll::-webkit-scrollbar-thumb {
-		background: var(--border-color, #444);
+		background: var(--border);
 		border-radius: 4px;
 	}
 	

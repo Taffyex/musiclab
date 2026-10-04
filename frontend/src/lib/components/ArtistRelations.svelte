@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { MBRelation } from '$lib/types';
+	import { slugify } from '$lib/utils/slugify';
 	
 	interface Props {
 		relations: MBRelation[];
@@ -17,6 +18,19 @@
 		}
 		return groups;
 	});
+	
+	/**
+	 * Resolve the display name and (best-effort) slug for a relation.
+	 * The backend stores raw MusicBrainz relation dicts, where the target
+	 * name lives under `target.name`. The frontend MBRelation type also
+	 * supports a flat `target_name` for normalized records.
+	 */
+	function resolveRelation(rel: MBRelation) {
+		// Raw MusicBrainz shape: { target: { name } }
+		const rawTarget = (rel as { target?: { name?: string } }).target;
+		const name = rel.target_name || rawTarget?.name || 'Unknown';
+		return { name, slug: slugify(name) };
+	}
 </script>
 
 {#if relations && relations.length > 0}
@@ -24,14 +38,15 @@
 		<h3 class="font-bold text-lg mb-sm">Relationships</h3>
 		
 		<div class="relations-grid">
-			{#each Object.entries(groupedRelations) as [type, rels]}
+			{#each Object.entries(groupedRelations) as [type, rels] (type)}
 				<div class="relation-group">
 					<h4 class="text-sm text-secondary mb-xs capitalize">{type.replace(/_/g, ' ')}</h4>
 					<ul class="relation-list">
-						{#each rels as rel}
+						{#each rels as rel (rel.target_name || rel.target_mbid || rel.type)}
+							{@const { name, slug } = resolveRelation(rel)}
 							<li>
-								<a href="/artist/{rel.target_name.toLowerCase().replace(/ /g, '-')}" class="entity-link">
-									{rel.target_name}
+								<a href="/artist/{slug}" class="entity-link">
+									{name}
 								</a>
 								{#if rel.begin || rel.end}
 									<span class="text-xs text-secondary ml-xs">
@@ -49,10 +64,10 @@
 
 <style>
 	.artist-relations {
-		background: var(--bg-surface, #1e1e2e);
+		background: var(--card-bg);
 		padding: 1.5rem;
-		border-radius: var(--radius-md, 8px);
-		border: 1px solid var(--border-color, #333);
+		border-radius: var(--radius-md);
+		border: 1px solid var(--border);
 	}
 	
 	.relations-grid {
@@ -62,14 +77,10 @@
 	}
 	
 	.relation-group {
-		background: var(--bg-app, #12121c);
+		background: var(--bg);
 		padding: 1rem;
-		border-radius: var(--radius-sm, 4px);
-		border: 1px solid var(--border-color, #222);
-	}
-	
-	.capitalize {
-		text-transform: capitalize;
+		border-radius: var(--radius-sm);
+		border: 1px solid var(--border);
 	}
 	
 	.relation-list {
@@ -82,16 +93,12 @@
 	}
 	
 	.entity-link {
-		color: var(--accent, #6c5ce7);
+		color: var(--accent);
 		text-decoration: none;
 		font-weight: 500;
 	}
 	
 	.entity-link:hover {
 		text-decoration: underline;
-	}
-	
-	.ml-xs {
-		margin-left: 0.25rem;
 	}
 </style>

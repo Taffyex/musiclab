@@ -72,7 +72,7 @@
 	<div class="form-group mb-sm">
 		<label for="profile" class="text-sm font-bold block mb-xs">Quality Profile</label>
 		<select id="profile" bind:value={selectedProfileId} class="w-full p-sm input-field">
-			{#each profiles as profile}
+			{#each profiles as profile (profile.id)}
 				<option value={profile.id}>{profile.name}</option>
 			{/each}
 		</select>
@@ -81,7 +81,7 @@
 	<div class="form-group mb-sm">
 		<label for="rootFolder" class="text-sm font-bold block mb-xs">Root Folder</label>
 		<select id="rootFolder" bind:value={selectedRootFolderPath} class="w-full p-sm input-field">
-			{#each rootFolders as folder}
+			{#each rootFolders as folder (folder.path)}
 				<option value={folder.path}>{folder.path}</option>
 			{/each}
 		</select>
@@ -113,7 +113,7 @@
 	}
 	
 	.input-field {
-		background: var(--bg);
+		background: var(--bg-secondary);
 		border: 1px solid var(--border);
 		color: var(--text);
 		border-radius: var(--radius-sm);
@@ -123,11 +123,4 @@
 		width: 1rem;
 		height: 1rem;
 	}
-	
-	.inline-block { display: inline-block; }
-	.mr-xs { margin-right: var(--space-xs); }
-	.block { display: block; }
-	.w-full { width: 100%; }
-	.justify-end { justify-content: flex-end; }
-	.items-center { align-items: center; }
 </style>

@@ -23,7 +23,7 @@
 			<div class="section">
 				<h3 class="text-lg font-medium text-secondary mb-sm">Top Artists</h3>
 				<ul class="flex-col gap-xs">
-					{#each profile.top_artists.slice(0, 5) as artist}
+					{#each profile.top_artists.slice(0, 5) as artist (artist.url || artist.name)}
 						<li class="flex-between">
 							<a href={artist.url} target="_blank" rel="noopener noreferrer">{artist.name}</a>
 							<span class="text-sm text-secondary">{artist.playcount} plays</span>
@@ -35,7 +35,7 @@
 			<div class="section">
 				<h3 class="text-lg font-medium text-secondary mb-sm">Top Genres</h3>
 				<div class="flex gap-sm wrap">
-					{#each profile.top_tags as genre}
+					{#each profile.top_tags as genre (genre.name)}
 						<span class="tag">{genre.name}</span>
 					{/each}
 				</div>
@@ -45,7 +45,7 @@
 		<div class="section mt-lg">
 			<h3 class="text-lg font-medium text-secondary mb-sm">Recent Tracks</h3>
 			<ul class="flex-col gap-xs">
-				{#each profile.recent_tracks.slice(0, 3) as track}
+				{#each profile.recent_tracks.slice(0, 3) as track (track.name + (track.timestamp || ''))}
 					<li class="track-item flex gap-sm">
 						<span class="font-medium">{track.name}</span>
 						<span class="text-secondary">by {track.artist}</span>
@@ -62,10 +62,6 @@
 	.taste-profile {
 		background: linear-gradient(135deg, var(--card-bg), var(--bg));
 	}
-	.mb-sm { margin-bottom: var(--space-sm); }
-	.mt-lg { margin-top: var(--space-lg); }
-	.py-xl { padding: var(--space-xl) 0; }
-	.py-md { padding: var(--space-md) 0; }
 	
 	.track-item {
 		padding: var(--space-xs) 0;
