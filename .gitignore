@@ -23,3 +23,6 @@ data/
 *.swp
 *.swo
 backend/debug.py
+
+# ─── Local recovery scratch (venv relocation repair) ───
+_venv_recovery/
