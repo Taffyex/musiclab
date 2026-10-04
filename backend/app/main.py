@@ -7,6 +7,8 @@ health check endpoint, and static file serving for the SvelteKit frontend.
 
 from __future__ import annotations
 
+import asyncio
+import logging
 import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
@@ -25,6 +27,7 @@ from app.database import DB_PATH, init_db
 from app.discovery.router import router as discovery_router
 from app.explore.router import router as explore_router
 from app.explore.seed_service import SeedService
+from app.enrichment.service import run_enrichment_worker
 from app.lastfm.router import router as lastfm_router
 from app.lidarr.router import router as lidarr_router
 from app.llm.router import router as llm_router
@@ -35,6 +38,8 @@ from app.settings.router import router as settings_router
 # Lifespan
 # ──────────────────────────────────────────────
 
+logger = logging.getLogger(__name__)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Initialize resources on startup and clean up on shutdown."""
@@ -43,7 +48,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         seed_service = SeedService(db)
         await seed_service.seed_if_needed()
 
+    enrichment_task = asyncio.create_task(run_enrichment_worker(str(DB_PATH)))
+    enrichment_task.add_done_callback(
+        lambda t: logger.exception("Enrichment worker failed") if t.exception() else None
+    )
+
     yield
+    
+    enrichment_task.cancel()
     # TODO: add any shutdown cleanup here (close pools, flush caches, etc.)
 
 

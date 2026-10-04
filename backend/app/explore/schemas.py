@@ -22,6 +22,19 @@ class Style(BaseModel):
     genre_name: str = ""
 
 
+class TrackSummary(BaseModel):
+    """Summary of a track for display."""
+    id: int = 0
+    title: str
+    position: int | None = None
+    duration_ms: int | None = None
+    lastfm_listeners: int | None = None
+    lastfm_playcount: int | None = None
+    preview_url: str | None = None
+    cover_url: str = ""
+
+
+
 class ArtistSummary(BaseModel):
     """Lightweight artist card for grid views."""
     id: int
@@ -41,7 +54,7 @@ class Credit(BaseModel):
     entity_name: str
     entity_slug: str
     role: str
-    entity_type: str    # 'person' | 'studio'
+    entity_type: Literal["person", "studio"]
 
 
 class ReleaseDetail(BaseModel):
@@ -56,6 +69,8 @@ class ReleaseDetail(BaseModel):
     genres: list[str] = Field(default_factory=list)
     styles: list[str] = Field(default_factory=list)
     credits: list[Credit] = Field(default_factory=list)
+    artist_role: Literal["primary", "secondary", "track"] = "primary"
+
 
 
 class ArtistDetail(BaseModel):
@@ -65,6 +80,8 @@ class ArtistDetail(BaseModel):
     slug: str
     bio: str = ""
     discogs_profile: str = ""
+    discogs_id: int | None = None
+    mbid: str | None = None
     country: str = ""
     begin_date: str = ""
     end_date: str = ""
@@ -77,6 +94,7 @@ class ArtistDetail(BaseModel):
     mb_tags: list[str] = Field(default_factory=list)
     mb_relations: list[dict] = Field(default_factory=list)
     releases: list[ReleaseDetail] = Field(default_factory=list)
+    top_tracks: list[TrackSummary] = Field(default_factory=list)
     similar_artists: list[ArtistSummary] = Field(default_factory=list)
     already_in_lidarr: bool = False
     lidarr_artist: dict | None = None
@@ -97,7 +115,7 @@ class CreditEntity(BaseModel):
     """A producer/engineer/studio with their associated releases."""
     name: str
     slug: str
-    entity_type: str
+    entity_type: Literal["person", "studio"]
     roles: list[str] = Field(default_factory=list)
     release_count: int = 0
     releases: list[ReleaseWithArtist] = Field(default_factory=list)
@@ -114,8 +132,8 @@ class ExploreFilters(BaseModel):
     genre: str | None = None
     style: str | None = None
     decade: str | None = None          # e.g., "1970s"
-    sort_by: str = "listeners"         # 'listeners' | 'scrobbles' | 'name'
-    sort_order: str = "desc"           # 'asc' | 'desc'
+    sort_by: Literal["listeners", "scrobbles", "name"] = "listeners"
+    sort_order: Literal["asc", "desc"] = "desc"
     page: int = 1
     per_page: int = 20
 

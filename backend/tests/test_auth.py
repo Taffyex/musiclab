@@ -1,6 +1,6 @@
 from __future__ import annotations
 import pytest
-from httpx import AsyncClient
+from httpx import AsyncClient, ASGITransport
 from app.main import app
 from app.config import settings
 from app.database import init_db
@@ -24,7 +24,7 @@ async def setup_db():
 
 @pytest.mark.asyncio
 async def test_login_success():
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.post("/api/auth/login", data={"username": "testuser", "password": "testpass"})
     assert response.status_code == 200
     assert response.json() == {"message": "Logged in successfully"}
@@ -32,7 +32,7 @@ async def test_login_success():
 
 @pytest.mark.asyncio
 async def test_login_failure():
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.post("/api/auth/login", data={"username": "testuser", "password": "wrongpass"})
     assert response.status_code == 401
     assert "Invalid username or password" in response.json()["detail"]
@@ -42,7 +42,7 @@ async def test_login_rate_limiting():
     from app.common.middleware import _rate_limit_store
     _rate_limit_store.clear()
     
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         for _ in range(5):
             res = await ac.post("/api/auth/login", data={"username": "testuser", "password": "wrongpass"})
             assert res.status_code == 401
@@ -51,3 +51,4 @@ async def test_login_rate_limiting():
         res = await ac.post("/api/auth/login", data={"username": "testuser", "password": "wrongpass"})
         assert res.status_code == 429
         assert "Too many login attempts" in res.json()["detail"]
+

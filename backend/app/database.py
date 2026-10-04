@@ -13,8 +13,18 @@ from typing import AsyncGenerator
 
 import aiosqlite
 
-DB_PATH = "data/musiclab.db"
+from app.config import settings
+
 _SCHEMA_PATH = Path(__file__).resolve().parent.parent / "schema.sql"
+
+
+def get_db_path() -> str:
+    """Return configured database path."""
+    return settings.database_path
+
+
+# For backward compatibility with existing imports
+DB_PATH = settings.database_path
 
 
 async def get_db() -> AsyncGenerator[aiosqlite.Connection, None]:
@@ -27,7 +37,9 @@ async def get_db() -> AsyncGenerator[aiosqlite.Connection, None]:
         async def example(db = Depends(get_db)):
             ...
     """
-    db = await aiosqlite.connect(DB_PATH)
+    path = get_db_path()
+    db = await aiosqlite.connect(path, timeout=30.0)
+    await db.execute("PRAGMA busy_timeout = 30000")
     db.row_factory = aiosqlite.Row
     try:
         yield db
@@ -39,20 +51,22 @@ async def init_db() -> None:
     """
     Initialize the database.
 
-    - Creates the ``data/`` directory if it doesn't exist.
+    - Creates the database directory if it doesn't exist.
     - Reads ``schema.sql`` and executes all CREATE TABLE statements.
     """
-    # Ensure the data directory exists
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    path = get_db_path()
+    dir_name = os.path.dirname(path)
+    if dir_name:
+        os.makedirs(dir_name, exist_ok=True)
 
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with aiosqlite.connect(path, timeout=30.0) as db:
+        await db.execute("PRAGMA busy_timeout = 30000")
         schema_sql = _SCHEMA_PATH.read_text(encoding="utf-8")
         await db.executescript(schema_sql)
         await db.commit()
 
     # seed default admin user from AUTH_USERNAME / AUTH_PASSWORD_HASH
-    from app.config import settings
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with aiosqlite.connect(path) as db:
         # Check if users table is empty
         async with db.execute("SELECT COUNT(*) FROM users") as cursor:
             row = await cursor.fetchone()

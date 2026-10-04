@@ -57,16 +57,26 @@ Favorite Styles: {favorite_styles}
 # ---------------------------------------------------------------------------
 
 DISCOVERY_PROMPT: str = """\
-You are in DISCOVERY mode.  Generate a batch of artist recommendations.
-For each artist, provide: name, primary genre, approximate era, a short
-explanation of why the user would enjoy them, and relevant tags.
-Return results as a JSON array.
+You are in DISCOVERY mode. Generate a batch of artist recommendations.
+Return ONLY a JSON array (no markdown fences, no extra text).
+Each element must be a JSON object with exactly these keys:
+- "artist_name": string — the artist or band name
+- "genre_tags": list of strings — genre and style tags (e.g. ["Post-Punk", "Darkwave"])
+- "era": string — approximate active era (e.g. "1980s", "2010s–present")
+- "ai_blurb": string — a one-sentence summary of the artist's sound and sonic qualities
+- "why_it_matches": string — why this user specifically would enjoy them based on their profile
 """
 
 EXPLORE_PROMPT: str = """\
-You are in EXPLORE mode.  The user wants artists similar to a specific
-artist.  Dig deeper than surface-level similarity — consider production
-style, lyrical themes, and sonic texture.
+You are in EXPLORE mode. The user wants artists similar to a specific artist.
+Dig deeper than surface-level similarity — consider production style, lyrical themes, and sonic texture.
+Return ONLY a JSON array (no markdown fences, no extra text).
+Each element must be a JSON object with exactly these keys:
+- "artist_name": string — the artist or band name
+- "genre_tags": list of strings — genre and style tags
+- "era": string — approximate era
+- "ai_blurb": string — a one-sentence summary of the artist's sound
+- "why_it_matches": string — why this artist is similar to the seed artist
 """
 
 CHAT_PROMPT: str = """\

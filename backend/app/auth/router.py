@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import aiosqlite
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
 
 from app.auth import service
@@ -30,7 +30,6 @@ async def login(
 
     Sets an HTTP-only session cookie on success.
     """
-    from fastapi import HTTPException, status
 
     form = await request.form()
     username = form.get("username")
@@ -54,6 +53,7 @@ async def login(
 async def logout(
     request: Request,
     response: Response,
+    current_user: dict = Depends(get_current_user),
     db: aiosqlite.Connection = Depends(get_db),
 ) -> dict:
     """

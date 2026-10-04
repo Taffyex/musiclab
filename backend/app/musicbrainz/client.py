@@ -13,6 +13,7 @@ import httpx
 
 from app.common.exceptions import ExternalAPIError
 from app.common.http import BaseHttpClient
+from app.config import settings
 
 
 class MusicBrainzClient(BaseHttpClient):
@@ -20,12 +21,13 @@ class MusicBrainzClient(BaseHttpClient):
 
     BASE_URL: str = "https://musicbrainz.org/ws/2"
 
-    def __init__(self) -> None:
+    def __init__(self, contact_email: str | None = None) -> None:
+        email = contact_email or settings.musicbrainz_contact_email or "musiclab@example.com"
         self._http = httpx.AsyncClient(
             base_url=self.BASE_URL,
             timeout=30.0,
             headers={
-                "User-Agent": "MusicLab/0.1 (musiclab@example.com)",
+                "User-Agent": f"MusicLab/0.1 ({email})",
                 "Accept": "application/json",
             },
         )

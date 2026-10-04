@@ -1,7 +1,7 @@
 from __future__ import annotations
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient
+from httpx import AsyncClient, ASGITransport
 from app.main import app
 from app.database import init_db
 from app.auth import service
@@ -19,9 +19,9 @@ async def setup_db():
             "INSERT INTO users (id, username, password_hash, lastfm_username, llm_provider) VALUES (?, ?, ?, ?, ?)",
             (1, "admin", service.hash_password("adminpass"), "admin_lastfm", "openai")
         )
-        await db.execute("DELETE FROM artists")
+        await db.execute("DELETE FROM artists WHERE id = 100")
         await db.execute(
-            "INSERT INTO artists (id, name, slug) VALUES (?, ?, ?)",
+            "INSERT OR REPLACE INTO artists (id, name, slug) VALUES (?, ?, ?)",
             (100, "Test Artist", "test-artist")
         )
         await db.commit()
@@ -33,7 +33,7 @@ async def get_auth_cookies(ac: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_favorites_crud():
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         cookies = await get_auth_cookies(ac)
         
         # 1. Get empty favorites

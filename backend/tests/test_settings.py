@@ -1,7 +1,7 @@
 from __future__ import annotations
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient
+from httpx import AsyncClient, ASGITransport
 from app.main import app
 from app.config import settings
 from app.database import init_db
@@ -45,7 +45,7 @@ async def get_auth_cookies(ac: AsyncClient):
 async def test_get_settings_masks_keys():
     settings.lastfm_api_key = "abcdef1234567890abcdef"
     
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         cookies = await get_auth_cookies(ac)
         response = await ac.get("/api/settings", cookies=cookies)
         
@@ -59,7 +59,7 @@ async def test_get_settings_masks_keys():
 async def test_put_settings_ignores_masked_keys():
     settings.lastfm_api_key = "original_key_123456"
     
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         cookies = await get_auth_cookies(ac)
         
         # Test updating with masked key (should be ignored)

@@ -2,20 +2,25 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
 from fastapi import APIRouter, Depends
-
-from app.lidarr.schemas import AddArtistRequest, LidarrArtist
-
-router = APIRouter()
 
 from app.auth.dependencies import get_current_user
 from app.config import settings
 from app.lidarr.client import LidarrClient
+from app.lidarr.schemas import AddArtistRequest, LidarrArtist
 from app.lidarr.service import LidarrService
 
-def get_lidarr_service() -> LidarrService:
+router = APIRouter()
+
+
+async def get_lidarr_service() -> AsyncGenerator[LidarrService, None]:
     client = LidarrClient(base_url=settings.lidarr_url, api_key=settings.lidarr_api_key)
-    return LidarrService(client=client)
+    service = LidarrService(client=client)
+    try:
+        yield service
+    finally:
+        await client.close()
 
 @router.get("/library", response_model=list[LidarrArtist])
 async def list_library(

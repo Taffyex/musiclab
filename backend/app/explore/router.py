@@ -13,7 +13,7 @@ from app.database import get_db
 from app.discogs.client import DiscogsClient
 from app.explore.schemas import (
     ArtistDetail, ArtistSummary, Credit, CreditEntity, ExploreFilters,
-    GenreTree, ReleaseDetail, FavoriteRequest, UserFavorites
+    GenreTree, ReleaseDetail, FavoriteRequest, UserFavorites, TrackSummary
 )
 from app.explore.service import ExploreService
 from app.lastfm.client import LastfmClient
@@ -103,6 +103,17 @@ async def get_similar_artists(
 ) -> list[ArtistSummary]:
     """Get similar artists."""
     return await service.get_similar_artists(slug)
+
+
+@router.get("/artists/{slug}/tracks")
+async def get_artist_tracks(
+    slug: str,
+    limit: int = Query(10, ge=1, le=50),
+    current_user: dict = Depends(get_current_user),
+    service: ExploreService = Depends(get_explore_service),
+) -> list[TrackSummary]:
+    """Get top tracks for an artist."""
+    return await service.get_artist_top_tracks(slug, limit)
 
 
 @router.get("/artists/{slug}/releases")

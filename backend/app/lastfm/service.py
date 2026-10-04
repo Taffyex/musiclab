@@ -65,3 +65,13 @@ class LastfmService:
     async def enrich_artist(self, artist_name: str) -> dict:
         """Fetch basic artist info for discovery enrichment."""
         return await self.client.get_artist_info(artist_name)
+
+    async def get_top_tracks(self, artist_name: str, limit: int = 10) -> list[dict]:
+        """Get top tracks for an artist, with caching."""
+        cache_key = f"lastfm:top_tracks:{artist_name}:{limit}"
+        cached = await self.cache.get(cache_key)
+        if cached:
+            return cached
+        tracks = await self.client.get_artist_top_tracks(artist_name, limit)
+        await self.cache.set(cache_key, tracks, ttl_seconds=3600)
+        return tracks

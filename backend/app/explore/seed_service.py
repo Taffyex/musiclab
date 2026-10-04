@@ -34,14 +34,26 @@ class SeedService:
                 await self._lastfm.close()
 
     async def _needs_refresh(self) -> bool:
-        """Check if taxonomy is older than 7 days."""
+        """Check if taxonomy is older than 7 days, unless populated by Discogs dump import."""
+        try:
+            async with self._db.execute(
+                "SELECT 1 FROM cache_entries WHERE key = 'import:discogs_dump'"
+            ) as cursor:
+                if await cursor.fetchone():
+                    return False
+        except Exception:
+            pass
+
         async with self._db.execute(
             "SELECT created_at FROM genres ORDER BY created_at DESC LIMIT 1"
         ) as cursor:
             row = await cursor.fetchone()
             if not row:
                 return True
+
             created_at = datetime.fromisoformat(row[0].replace('Z', '+00:00'))
+            if created_at.tzinfo is None:
+                created_at = created_at.replace(tzinfo=timezone.utc)
             if datetime.now(timezone.utc) - created_at > timedelta(days=7):
                 return True
         return False
@@ -103,11 +115,13 @@ class SeedService:
         try:
             tags = await self._lastfm.get_global_top_tags(limit=50)
             for tag_info in tags:
-                tag_name = tag_info.get("name", "").title()
-                if not tag_name:
+                tag_name = tag_info.get("name", "").strip().title()
+                if not tag_name or len(tag_name) <= 2 or tag_name.isdigit():
                     continue
                 
                 slug = slugify(tag_name)
+                if not slug or slug.isdigit():
+                    continue
                 
                 # Check if it already exists as genre or style
                 async with self._db.execute("SELECT id FROM genres WHERE name = ?", (tag_name,)) as cursor:

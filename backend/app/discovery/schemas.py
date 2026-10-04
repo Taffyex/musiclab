@@ -16,6 +16,7 @@ class DiscoveryCard(BaseModel):
     era: str = ""
     ai_blurb: str = ""
     why_it_matches: str = ""
+    image_url: str = ""
     lastfm_listeners: int | None = None
     lastfm_playcount: int | None = None
     mb_data: dict | None = None

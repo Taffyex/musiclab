@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import aiosqlite
+import json
 import logging
 
-logger = logging.getLogger(__name__)
-
 from app.llm.base import LLMProvider
+from app.llm.prompts import MEMORY_EXTRACTION_PROMPT
 from app.llm.schemas import ChatMessage, MemoryUpdate
+
+logger = logging.getLogger(__name__)
 
 
 class MemoryService:
@@ -36,7 +38,6 @@ class MemoryService:
             A dict representing the user's memory block, or an empty dict
             if no memory exists yet.
         """
-        import json
         async with self.db.execute("SELECT memory FROM memory_blocks WHERE user_id = ?", (user_id,)) as cursor:
             row = await cursor.fetchone()
         
@@ -59,8 +60,6 @@ class MemoryService:
             user_id: Internal user ID.
             conversation: The list of chat messages to analyse.
         """
-        from app.llm.prompts import MEMORY_EXTRACTION_PROMPT
-        import json
         
         conv_str = "\n".join([f"{msg.role}: {msg.content}" for msg in conversation])
         user_msg = f"Conversation:\n{conv_str}"

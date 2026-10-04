@@ -109,10 +109,13 @@ CREATE TABLE IF NOT EXISTS releases (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     artist_id       INTEGER NOT NULL REFERENCES artists(id) ON DELETE CASCADE,
     discogs_id      INTEGER,
+    master_id       INTEGER,
+    is_main_release BOOLEAN DEFAULT 0,
     mbid            TEXT,
     title           TEXT    NOT NULL,
     year            INTEGER,
-    release_type    TEXT    DEFAULT '',    -- 'Album' | 'Single' | 'EP' | 'Compilation'
+    country         TEXT    DEFAULT '',
+    release_type    TEXT    DEFAULT '',    -- 'Album' | 'Single' | 'EP' | 'Compilation' | 'Soundtrack'
     label           TEXT    DEFAULT '',
     format          TEXT    DEFAULT '',
     cover_url       TEXT    DEFAULT '',
@@ -120,6 +123,16 @@ CREATE TABLE IF NOT EXISTS releases (
     styles          JSON,
     fetched_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(artist_id, discogs_id)
+);
+
+-- Multi-artist links: every credited artist per release (primary, secondary,
+-- track-level, extra). Preserves full info for compilations, soundtracks,
+-- splits and collaborations where releases.artist_id holds only the primary.
+CREATE TABLE IF NOT EXISTS release_artists (
+    release_id      INTEGER NOT NULL REFERENCES releases(id) ON DELETE CASCADE,
+    artist_id       INTEGER NOT NULL REFERENCES artists(id) ON DELETE CASCADE,
+    role            TEXT    NOT NULL DEFAULT 'primary',  -- 'primary' | 'secondary' | 'track' | 'extra:Producer' ...
+    PRIMARY KEY (release_id, artist_id, role)
 );
 
 -- Credits (producer, engineer, studio — linked to releases)
@@ -144,11 +157,49 @@ CREATE TABLE IF NOT EXISTS favorites (
     UNIQUE(user_id, entity_type, entity_id)
 );
 
+-- Track-level data (from MusicBrainz recordings + Last.fm enrichment)
+CREATE TABLE IF NOT EXISTS tracks (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    release_id      INTEGER REFERENCES releases(id) ON DELETE CASCADE,
+    mbid            TEXT,
+    title           TEXT    NOT NULL,
+    position        INTEGER,
+    duration_ms     INTEGER,
+    lastfm_listeners INTEGER,
+    lastfm_playcount INTEGER,
+    fetched_at      TIMESTAMP,
+    UNIQUE(release_id, position)
+);
+
+-- Background enrichment priority queue
+CREATE TABLE IF NOT EXISTS enrichment_queue (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    entity_type TEXT    NOT NULL,
+    entity_id   INTEGER NOT NULL,
+    priority    INTEGER NOT NULL DEFAULT 0,
+    status      TEXT    NOT NULL DEFAULT 'pending',
+    attempts    INTEGER NOT NULL DEFAULT 0,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(entity_type, entity_id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_artists_slug ON artists(slug);
 CREATE INDEX IF NOT EXISTS idx_artists_listeners ON artists(lastfm_listeners DESC);
 CREATE INDEX IF NOT EXISTS idx_artists_playcount ON artists(lastfm_playcount DESC);
 CREATE INDEX IF NOT EXISTS idx_releases_artist ON releases(artist_id);
 CREATE INDEX IF NOT EXISTS idx_credits_entity_slug ON credits(entity_slug);
 CREATE INDEX IF NOT EXISTS idx_credits_role ON credits(role);
+CREATE INDEX IF NOT EXISTS idx_credits_discogs ON credits(discogs_id);
 CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id);
 CREATE INDEX IF NOT EXISTS idx_styles_genre ON styles(genre_id);
+CREATE INDEX IF NOT EXISTS idx_artist_genres_genre ON artist_genres(genre_id);
+CREATE INDEX IF NOT EXISTS idx_artist_styles_style ON artist_styles(style_id);
+CREATE INDEX IF NOT EXISTS idx_tracks_release ON tracks(release_id);
+CREATE INDEX IF NOT EXISTS idx_tracks_mbid ON tracks(mbid);
+CREATE INDEX IF NOT EXISTS idx_enrichment_queue_status ON enrichment_queue(status, priority DESC);
+CREATE INDEX IF NOT EXISTS idx_release_artists_artist ON release_artists(artist_id);
+CREATE INDEX IF NOT EXISTS idx_release_artists_release ON release_artists(release_id);
+CREATE INDEX IF NOT EXISTS idx_releases_discogs ON releases(discogs_id);
+CREATE INDEX IF NOT EXISTS idx_artists_discogs ON artists(discogs_id);
+

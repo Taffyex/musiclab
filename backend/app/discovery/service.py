@@ -133,12 +133,23 @@ class DiscoveryService:
             
         # 4. Enrich each artist
         cards = []
+        library_lower = {n.lower() for n in library_names}
         for raw_rec in raw_recs:
-            name = raw_rec.get("artist_name")
+            name = raw_rec.get("artist_name") or raw_rec.get("name") or raw_rec.get("artist")
             if not name:
                 continue
             enriched = await self.enrich_artist(name)
             lastfm_data = enriched.get("lastfm") or {}
+            
+            image_url = ""
+            if lastfm_data.get("image"):
+                for img_obj in reversed(lastfm_data.get("image", [])):
+                    url = img_obj.get("#text", "")
+                    if url and "2a96cbd8b46e442fc41c2b86b821562f" not in url:
+                        image_url = url
+                        break
+            if not image_url and enriched.get("discogs"):
+                image_url = enriched["discogs"].get("cover_image") or ""
             
             card = DiscoveryCard(
                 id=str(uuid4()),
@@ -147,10 +158,12 @@ class DiscoveryService:
                 era=raw_rec.get("era", ""),
                 ai_blurb=raw_rec.get("ai_blurb", ""),
                 why_it_matches=raw_rec.get("why_it_matches", ""),
+                image_url=image_url,
                 lastfm_listeners=lastfm_data.get("listeners"),
                 lastfm_playcount=lastfm_data.get("playcount"),
                 mb_data=enriched.get("musicbrainz"),
-                discogs_data=enriched.get("discogs")
+                discogs_data=enriched.get("discogs"),
+                already_in_lidarr=name.lower() in library_lower,
             )
             cards.append(card)
             
@@ -160,8 +173,8 @@ class DiscoveryService:
         
         # Insert batch
         cursor = await self.db.execute(
-            "INSERT INTO discovery_batches (id, user_id, created_at) VALUES (?, ?, ?)",
-            (batch_id, user_id, created_at)
+            "INSERT INTO discovery_batches (id, user_id, prompt_used, created_at) VALUES (?, ?, ?, ?)",
+            (batch_id, user_id, user_prompt, created_at)
         )
         await self.db.commit()
         
@@ -207,14 +220,26 @@ class DiscoveryService:
         llm_response = await self.llm.generate(system_prompt, user_prompt)
         
         raw_recs = parse_llm_json(llm_response.content)
+        library_names = await self.lidarr.get_library_artist_names()
+        library_lower = {n.lower() for n in library_names}
             
         cards = []
         for raw_rec in raw_recs:
-            name = raw_rec.get("artist_name")
+            name = raw_rec.get("artist_name") or raw_rec.get("name") or raw_rec.get("artist")
             if not name:
                 continue
             enriched = await self.enrich_artist(name)
             lastfm_data = enriched.get("lastfm") or {}
+            
+            image_url = ""
+            if lastfm_data.get("image"):
+                for img_obj in reversed(lastfm_data.get("image", [])):
+                    url = img_obj.get("#text", "")
+                    if url and "2a96cbd8b46e442fc41c2b86b821562f" not in url:
+                        image_url = url
+                        break
+            if not image_url and enriched.get("discogs"):
+                image_url = enriched["discogs"].get("cover_image") or ""
             
             card = DiscoveryCard(
                 id=str(uuid4()),
@@ -223,10 +248,12 @@ class DiscoveryService:
                 era=raw_rec.get("era", ""),
                 ai_blurb=raw_rec.get("ai_blurb", ""),
                 why_it_matches=raw_rec.get("why_it_matches", ""),
+                image_url=image_url,
                 lastfm_listeners=lastfm_data.get("listeners"),
                 lastfm_playcount=lastfm_data.get("playcount"),
                 mb_data=enriched.get("musicbrainz"),
-                discogs_data=enriched.get("discogs")
+                discogs_data=enriched.get("discogs"),
+                already_in_lidarr=name.lower() in library_lower,
             )
             cards.append(card)
             

@@ -73,3 +73,25 @@ class SettingsService:
             app_settings.openai_api_key = env_writes["OPENAI_API_KEY"]
         if "DEEPSEEK_API_KEY" in env_writes:
             app_settings.deepseek_api_key = env_writes["DEEPSEEK_API_KEY"]
+    async def update_user_settings(
+        self,
+        db: aiosqlite.Connection,
+        user_id: int,
+        current_user: dict,
+        updates: dict[str, str | None],
+    ) -> None:
+        """Update DB user fields and persist non-masked app settings."""
+        lastfm_username = updates.get("lastfm_username")
+        new_lastfm_username = lastfm_username if lastfm_username is not None else current_user.get("lastfm_username")
+
+        llm_provider = updates.get("llm_provider")
+        new_llm_provider = llm_provider if llm_provider is not None else current_user.get("llm_provider")
+
+        await db.execute(
+            "UPDATE users SET lastfm_username = ?, llm_provider = ? WHERE id = ?",
+            (new_lastfm_username, new_llm_provider, user_id),
+        )
+        await db.commit()
+
+        self.apply_updates(updates)
+

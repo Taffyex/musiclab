@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     app_secret_key: str = "change-me-to-a-random-string"
     cors_origins: str = "http://localhost:5173"
+    database_path: str = "data/musiclab.db"
     
     @field_validator("app_secret_key")
     @classmethod
@@ -48,6 +49,9 @@ class Settings(BaseSettings):
 
     # ─── Discogs ───
     discogs_token: str = ""
+
+    # ─── MusicBrainz ───
+    musicbrainz_contact_email: str = "musiclab@example.com"
 
     # ─── Auth Defaults ───
     auth_username: str = "admin"

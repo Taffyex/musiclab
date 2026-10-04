@@ -7,3 +7,4 @@ bcrypt>=4.2.0
 python-multipart>=0.0.12
 python-dotenv>=1.0.0
 openai>=1.55.0
+lxml==6.1.3

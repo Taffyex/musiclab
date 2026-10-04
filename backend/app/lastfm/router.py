@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import aiosqlite
 from collections.abc import AsyncGenerator
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.auth.dependencies import get_current_user
 from app.cache.service import CacheService
@@ -37,7 +37,6 @@ async def get_profile(
     """
     lastfm_username = current_user.get("lastfm_username") or settings.lastfm_username
     if not lastfm_username:
-        from fastapi import HTTPException
         raise HTTPException(status_code=400, detail="Last.fm username not configured")
     return await service.get_full_profile(lastfm_username)
 
@@ -50,6 +49,6 @@ async def refresh_profile(
     """Force-refresh the user's Last.fm profile from the API."""
     lastfm_username = current_user.get("lastfm_username") or settings.lastfm_username
     if not lastfm_username:
-        from fastapi import HTTPException
         raise HTTPException(status_code=400, detail="Last.fm username not configured")
     return await service.refresh_profile(lastfm_username)
+

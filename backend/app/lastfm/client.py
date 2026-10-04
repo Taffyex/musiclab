@@ -41,7 +41,15 @@ class LastfmClient(BaseHttpClient):
             response.raise_for_status()
             return response.json()
         except httpx.HTTPStatusError as e:
-            raise ExternalAPIError(service="Last.fm", message=str(e.response.status_code)) from e
+            # Last.fm returns a JSON body with an error code and message (e.g. invalid API key)
+            detail = f"HTTP {e.response.status_code}"
+            try:
+                body = e.response.json()
+                if isinstance(body, dict) and body.get("message"):
+                    detail = body["message"]
+            except ValueError:
+                pass
+            raise ExternalAPIError(service="Last.fm", message=detail, status_code=e.response.status_code) from e
         except httpx.RequestError as e:
             raise ExternalAPIError(service="Last.fm", message=str(e)) from e
 
@@ -97,6 +105,18 @@ class LastfmClient(BaseHttpClient):
         params = {"artist": artist, "autocorrect": 1}
         data = await self._request("artist.getInfo", params)
         return data.get("artist", {})
+
+    async def get_artist_top_tracks(self, artist: str, limit: int = 10) -> list[dict]:
+        """Get an artist's top tracks with play counts."""
+        params = {"artist": artist, "limit": limit, "autocorrect": 1}
+        data = await self._request("artist.getTopTracks", params)
+        return data.get("toptracks", {}).get("track", [])
+
+    async def get_track_info(self, artist: str, track: str) -> dict:
+        """Get detailed info for a specific track."""
+        params = {"artist": artist, "track": track, "autocorrect": 1}
+        data = await self._request("track.getInfo", params)
+        return data.get("track", {})
 
     async def get_tag_top_artists(self, tag: str, page: int = 1, limit: int = 50) -> list[dict]:
         params = {"tag": tag, "page": page, "limit": limit}
